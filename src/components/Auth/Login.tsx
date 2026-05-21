@@ -37,7 +37,7 @@ export const Login = ({ onLogin, onSwitchToRegister }: LoginProps) => {
               <LogIn className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-800">欢迎回来</h1>
-            <p className="text-gray-500 mt-2">登录你的收到小助手账号</p>
+            <p className="text-gray-500 mt-2">登录你的树洞账号</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -107,7 +107,7 @@ export const Login = ({ onLogin, onSwitchToRegister }: LoginProps) => {
         </div>
 
         <p className="text-center text-gray-400 text-sm mt-6">
-          你的隐私很安全，我们不会存储你的密码
+          你的隐私很安全，我们不会存储你的密码和聊天信息，所有数据均保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。清空浏览器缓存时会清空数据库！请及时导出和保存数据！使用时请退出无痕浏览模式，因为无痕浏览模式退出时每次都会清空缓存。
         </p>
       </div>
     </div>

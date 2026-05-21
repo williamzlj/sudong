@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { User as UserType, BotSettings } from '../../types/auth';
-import { Eye, EyeOff, UserIcon, Lock, Mail, Save, LogOut, X, Camera, Bot, Edit3, MessageSquare } from 'lucide-react';
+import { Eye, EyeOff, UserIcon, Lock, Mail, Save, LogOut, X, Camera, Bot, Edit3, MessageSquare, Minus, Plus } from 'lucide-react';
 import { ImageManager } from './ImageManager';
 
 interface ProfileSettingsProps {
@@ -46,10 +46,11 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
   const [selectedBotAvatar, setSelectedBotAvatar] = useState(botSettings.avatar || 'bg-green-500');
   const [botDefaultReply, setBotDefaultReply] = useState(botSettings.defaultReply || '收到！');
   const [selectedUserNameColor, setSelectedUserNameColor] = useState(user.userNameColor || 'text-blue-500');
-  const [productName, setProductName] = useState(botSettings.productName || '收到小助手小助手');
+  const [productName, setProductName] = useState(botSettings.productName || '树洞小助手');
   const [productDescription, setProductDescription] = useState(botSettings.productDescription || '倾诉你的心声');
   const [chatHint, setChatHint] = useState(botSettings.chatHint || '你的秘密很安全');
   const [chatBackgroundText, setChatBackgroundText] = useState(botSettings.chatBackgroundText || '说出你的心里话吧，我会认真倾听');
+  const [fontSize, setFontSize] = useState(botSettings.fontSize || 14);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const botFileInputRef = useRef<HTMLInputElement>(null);
@@ -126,6 +127,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
         productDescription,
         chatHint,
         chatBackgroundText,
+        fontSize,
       });
       setSuccess('机器人设置已更新');
     } catch (err) {
@@ -561,6 +563,28 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                       placeholder="输入聊天背景文字"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">字体大小</label>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => setFontSize(Math.max(12, fontSize - 1))}
+                      className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                    >
+                      <Minus className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <div className="flex-1 bg-gray-50 rounded-lg px-4 py-3 text-center text-lg font-medium text-gray-800">
+                      {fontSize}px
+                    </div>
+                    <button
+                      onClick={() => setFontSize(Math.min(32, fontSize + 1))}
+                      className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                    >
+                      <Plus className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">范围：12px - 32px</p>
                 </div>
               </div>
 

@@ -333,7 +333,7 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
   }, []);
 
   const exportChatsToWord = useCallback((chats: ChatHistory[]): string => {
-    let content = '收到小助手聊天记录汇总\n';
+    let content = '树洞聊天记录汇总\n';
     content += `导出时间：${formatTimestamp(new Date())}\n`;
     content += `共 ${chats.length} 条记录\n\n`;
     content += '='.repeat(50) + '\n\n';

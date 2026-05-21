@@ -9,9 +9,10 @@ interface TodoItemProps {
   onUpdate: (id: string, updates: Partial<Todo>) => void;
   onTogglePin: (id: string) => void;
   onCopyToPending?: (todo: Todo) => void;
+  isDarkMode?: boolean;
 }
 
-export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, onCopyToPending }: TodoItemProps) => {
+export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, onCopyToPending, isDarkMode = false }: TodoItemProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -258,11 +259,11 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
 
         <div
           ref={slideRef}
-          className={`relative border rounded-lg p-4 transition-transform cursor-pointer ${
+          className={`relative border rounded-lg p-3 sm:p-4 transition-transform cursor-pointer ${
             todo.status === 'completed' ? 'bg-green-50 border-green-200' :
             todo.status === 'reference' ? 'bg-blue-50 border-blue-200' :
             'bg-white border-gray-200'
-          }`}
+          } ${isDarkMode ? 'bg-gray-700 border-gray-600' : ''}`}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
@@ -274,22 +275,26 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
             if (slideRef.current) slideRef.current.style.transform = 'translateX(0)';
           }}
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
               {showEdit ? (
                 <div className="space-y-2">
                   <input
                     type="text"
                     value={editTitle}
                     onChange={e => setEditTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-green-500 rounded-lg text-sm outline-none"
+                    className={`w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 ${
+                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-green-500'
+                    }`}
                     autoFocus
                   />
                   <textarea
                     value={editNote}
                     onChange={e => setEditNote(e.target.value)}
                     placeholder="备注..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none resize-none h-16"
+                    className={`w-full px-3 py-2 border rounded-lg text-sm outline-none resize-none h-16 ${
+                      isDarkMode ? 'bg-gray-600 border-gray-500 text-white placeholder-gray-400' : 'border-gray-300'
+                    }`}
                   />
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4 text-gray-400" />
@@ -297,7 +302,9 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                       type="date"
                       value={editDeadline}
                       onChange={e => setEditDeadline(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none"
+                      className={`px-3 py-2 border rounded-lg text-sm outline-none ${
+                        isDarkMode ? 'bg-gray-600 border-gray-500 text-white' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                   <div className="flex space-x-2">
@@ -309,7 +316,9 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCancel(); }}
-                      className="px-3 py-1 bg-gray-200 text-gray-600 rounded-lg text-sm"
+                      className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                        isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                      }`}
                     >
                       取消
                     </button>
@@ -317,21 +326,23 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-wrap">
                     {todo.isPinned && (
-                      <Pin className="w-4 h-4 text-red-500" />
+                      <Pin className="w-4 h-4 text-red-500 flex-shrink-0" />
                     )}
                     {getStatusBadge()}
-                    <h3 className={`font-medium ${
-                      todo.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-800'
+                    <h3 className={`font-medium flex-1 min-w-0 ${
+                      todo.status === 'completed' ? 'text-gray-400 line-through' : isDarkMode ? 'text-gray-200' : 'text-gray-800'
                     }`}>
                       {todo.title}
                     </h3>
                   </div>
                   {todo.note && (
-                    <p className="text-sm text-gray-500 mt-1">{todo.note}</p>
+                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {todo.note}
+                    </p>
                   )}
-                  <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
+                  <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400 flex-wrap">
                     <span>{formatDateTime(todo.createdAt)}</span>
                     {todo.deadline && (
                       <span className="flex items-center space-x-1">
@@ -345,79 +356,87 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
             </div>
 
             {!showEdit && (
-              <div className="flex space-x-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onTogglePin(todo.id); }}
-                  className={`p-2 rounded-lg transition-colors ${
-                    todo.isPinned ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                  }`}
-                  title={todo.isPinned ? '取消置顶' : '置顶'}
-                >
-                  <Pin className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowEdit(true); }}
-                  className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
-                  title="编辑"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                {confirmStatus === todo.id ? (
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleSetStatus(todo.id); }}
-                      className={`px-2 py-1 text-xs text-white rounded hover:transition-colors ${
-                        todo.status === 'completed' 
-                          ? 'bg-orange-500 hover:bg-orange-600' 
-                          : 'bg-green-500 hover:bg-green-600'
-                      }`}
-                    >
-                      确认
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmStatus(null); }}
-                      className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors"
-                    >
-                      取消
-                    </button>
-                  </div>
-                ) : (
+              <div className="flex flex-col sm:flex-row sm:space-x-2 gap-1 sm:gap-2">
+                <div className="flex gap-1">
                   <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmStatus(todo.id); }}
+                    onClick={(e) => { e.stopPropagation(); onTogglePin(todo.id); }}
                     className={`p-2 rounded-lg transition-colors ${
-                      todo.status === 'completed' 
-                        ? 'text-gray-400 hover:text-orange-500 hover:bg-orange-50' 
-                        : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
+                      todo.isPinned ? 'text-red-500 bg-red-50' : `text-gray-400 hover:text-red-500 hover:bg-red-50 ${isDarkMode ? 'hover:bg-red-900' : ''}`
                     }`}
-                    title={todo.status === 'completed' ? '标记为未完成' : '标记为已完成'}
+                    title={todo.isPinned ? '取消置顶' : '置顶'}
                   >
-                    <Check className="w-4 h-4" />
+                    <Pin className="w-4 h-4" />
                   </button>
-                )}
-                {confirmDelete === todo.id ? (
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(todo.id); }}
-                      className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                    >
-                      确认
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
-                      className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors"
-                    >
-                      取消
-                    </button>
-                  </div>
-                ) : (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(todo.id); }}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="删除"
+                    onClick={(e) => { e.stopPropagation(); setShowEdit(true); }}
+                    className={`p-2 rounded-lg transition-colors text-gray-400 hover:text-green-500 hover:bg-green-50 ${isDarkMode ? 'hover:bg-green-900' : ''}`}
+                    title="编辑"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Edit3 className="w-4 h-4" />
                   </button>
-                )}
+                </div>
+                <div className="flex gap-1">
+                  {confirmStatus === todo.id ? (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleSetStatus(todo.id); }}
+                        className={`px-2 py-1 text-xs text-white rounded transition-colors ${
+                          todo.status === 'completed' 
+                            ? 'bg-orange-500 hover:bg-orange-600' 
+                            : 'bg-green-500 hover:bg-green-600'
+                        }`}
+                      >
+                        确认
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmStatus(null); }}
+                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                          isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        }`}
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmStatus(todo.id); }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        todo.status === 'completed' 
+                          ? `text-gray-400 hover:text-orange-500 hover:bg-orange-50 ${isDarkMode ? 'hover:bg-orange-900' : ''}` 
+                          : `text-gray-400 hover:text-green-500 hover:bg-green-50 ${isDarkMode ? 'hover:bg-green-900' : ''}`
+                      }`}
+                      title={todo.status === 'completed' ? '标记为未完成' : '标记为已完成'}
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  )}
+                  {confirmDelete === todo.id ? (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(todo.id); }}
+                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                      >
+                        确认
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
+                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                          isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        }`}
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(todo.id); }}
+                      className={`p-2 rounded-lg transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 ${isDarkMode ? 'hover:bg-red-900' : ''}`}
+                      title="删除"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -3,7 +3,7 @@ import { Message, ChatHistory } from '../types';
 import { Todo } from '../types/todo';
 
 const DB_NAME = 'TreeHoleDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let db: IDBDatabase | null = null;
 
@@ -20,6 +20,7 @@ export const initDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
+      const oldVersion = event.oldVersion || 0;
 
       if (!database.objectStoreNames.contains('users')) {
         const userStore = database.createObjectStore('users', { keyPath: 'id' });
@@ -54,6 +55,25 @@ export const initDB = (): Promise<IDBDatabase> => {
       if (!database.objectStoreNames.contains('admin_users')) {
         const adminStore = database.createObjectStore('admin_users', { keyPath: 'id' });
         adminStore.createIndex('username', 'username', { unique: true });
+      }
+
+      // 数据迁移：添加 fontSize 字段到旧数据
+      if (oldVersion < 4 && database.objectStoreNames.contains('bot_settings')) {
+        const transaction = (event.target as IDBOpenDBRequest).transaction;
+        const botStore = transaction?.objectStore('bot_settings');
+        if (botStore) {
+          botStore.openCursor().onsuccess = (e) => {
+            const cursor = (e.target as IDBRequest).result;
+            if (cursor) {
+              const settings = cursor.value;
+              if (!settings.fontSize) {
+                settings.fontSize = 14;
+                cursor.update(settings);
+              }
+              cursor.continue();
+            }
+          };
+        }
       }
     };
   });
@@ -206,10 +226,11 @@ export const getBotSettings = async (userId: string): Promise<BotSettings> => {
           name: result.name || '小树',
           avatar: result.avatar || 'bg-green-500',
           defaultReply: result.defaultReply || '收到！',
-          productName: result.productName || '收到小助手',
+          productName: result.productName || '树洞',
           productDescription: result.productDescription || '倾诉你的心声',
           chatHint: result.chatHint || '你的秘密很安全',
           chatBackgroundText: result.chatBackgroundText || '说出你的心里话吧，我会认真倾听',
+          fontSize: result.fontSize || 14,
         };
         resolve(settings);
       } else {
@@ -217,10 +238,11 @@ export const getBotSettings = async (userId: string): Promise<BotSettings> => {
           name: '小树', 
           avatar: 'bg-green-500', 
           defaultReply: '收到！',
-          productName: '收到小助手',
+          productName: '树洞',
           productDescription: '倾诉你的心声',
           chatHint: '你的秘密很安全',
           chatBackgroundText: '说出你的心里话吧，我会认真倾听',
+          fontSize: 14,
         };
         saveBotSettings(userId, defaultSettings).then(() => resolve(defaultSettings));
       }

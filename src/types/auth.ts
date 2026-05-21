@@ -19,6 +19,7 @@ export interface BotSettings {
   productDescription: string;
   chatHint: string;
   chatBackgroundText: string;
+  fontSize?: number;
 }
 
 export interface AuthState {

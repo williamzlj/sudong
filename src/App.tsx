@@ -37,6 +37,20 @@ export default function App() {
   const [showSelectMode, setShowSelectMode] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [adminError, setAdminError] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setSidebarVisible(false);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const { user, isAuthenticated, login, register, logout, updateProfile, botSettings, updateBotSettings } = useAuth();
 
@@ -104,6 +118,9 @@ export default function App() {
     clearMessages();
     setActiveTab('chat');
     setIsFromHistory(false);
+    if (isMobile) {
+      setSidebarVisible(false);
+    }
   };
 
   const handleLoadChat = (chat: ChatHistoryType) => {
@@ -111,6 +128,9 @@ export default function App() {
     setActiveTab('chat');
     setIsFromHistory(true);
     setShowSearchResults(false);
+    if (isMobile) {
+      setSidebarVisible(false);
+    }
   };
 
   const handleExportChat = (chat: ChatHistoryType) => {
@@ -267,39 +287,61 @@ export default function App() {
   }
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} transition-colors duration-300`}>
-      {/* Sidebar with toggle */}
-      {sidebarVisible && (
-        <Sidebar
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setShowSearchResults(false);
-          }}
-          onNewChat={handleNewChat}
-          onOpenSettings={() => setShowProfileSettings(true)}
-          onOpenAdmin={() => {
-            const password = prompt('请输入管理员密码：');
-            if (password === 'admin123') {
-              setShowAdminPanel(true);
-            } else if (password !== null) {
-              alert('密码错误');
-            }
-          }}
-          user={user!}
-          botSettings={botSettings}
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} transition-colors duration-300 overflow-hidden`}>
+      {/* Sidebar with toggle - hidden by default on mobile */}
+      {(sidebarVisible || !isMobile) && (
+        <div className={`fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0 ${
+          sidebarVisible ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+          <div className={`w-64 lg:w-64 h-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} border-r border-gray-700 lg:border-gray-200`}>
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setShowSearchResults(false);
+                if (isMobile) {
+                  setSidebarVisible(false);
+                }
+              }}
+              onNewChat={handleNewChat}
+              onOpenSettings={() => {
+                setShowProfileSettings(true);
+                if (isMobile) {
+                  setSidebarVisible(false);
+                }
+              }}
+              onOpenAdmin={() => {
+                const password = prompt('请输入管理员密码：');
+                if (password === 'admin123') {
+                  setShowAdminPanel(true);
+                } else if (password !== null) {
+                  alert('密码错误');
+                }
+              }}
+              user={user!}
+              botSettings={botSettings}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarVisible && isMobile && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarVisible(false)}
         />
       )}
 
-      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} min-w-0`}>
         {activeTab === 'chat' ? (
           <>
-            <div className={`border-b px-4 py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className={`border-b px-2 sm:px-4 py-2 sm:py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {/* Toggle sidebar button */}
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  {/* Toggle sidebar button - always visible on mobile */}
                   <button
                     onClick={() => setSidebarVisible(!sidebarVisible)}
                     className={`p-1 rounded-lg transition-colors ${
@@ -323,19 +365,19 @@ export default function App() {
                       <ArrowLeft className="w-5 h-5" />
                     </button>
                   )}
-                  <div>
-                    <h2 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                  <div className="min-w-0">
+                    <h2 className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                       {isFromHistory ? '已加载的记录' : `与${botSettings.name}对话`}
                     </h2>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">
                       {isFromHistory ? '点击返回查看更多记录' : botSettings.chatHint || '你的秘密很安全'}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                   {showSavedToast && (
-                    <div className="flex items-center space-x-2 bg-green-500 text-white px-3 py-1.5 rounded-full">
-                      <Check className="w-4 h-4" />
+                    <div className="flex items-center space-x-2 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full">
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="text-xs font-medium">自动保存成功</span>
                     </div>
                   )}
@@ -343,7 +385,7 @@ export default function App() {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={handleSelectAll}
-                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                        className={`flex items-center space-x-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
                           isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
                         } text-white`}
                       >
@@ -351,28 +393,28 @@ export default function App() {
                           type="checkbox"
                           checked={selectedMessages.length === messages.length && messages.length > 0}
                           onChange={handleSelectAll}
-                          className="w-4 h-4 cursor-pointer"
+                          className="w-3 h-3 sm:w-4 sm:h-4 cursor-pointer"
                         />
-                        <span>全选</span>
+                        <span className="hidden sm:inline">全选</span>
                       </button>
                       <button
                         onClick={handleDeleteSelected}
                         disabled={selectedMessages.length === 0}
-                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                        className={`flex items-center space-x-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
                           selectedMessages.length > 0
                             ? isDarkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'
                             : 'bg-gray-400 cursor-not-allowed'
                         } text-white`}
                       >
-                        <Trash2 className="w-4 h-4" />
-                        <span>删除选中 ({selectedMessages.length})</span>
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>{selectedMessages.length}</span>
                       </button>
                       <button
                         onClick={() => {
                           setShowSelectMode(false);
                           setSelectedMessages([]);
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                        className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
                           isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
                         } text-white`}
                       >
@@ -382,13 +424,12 @@ export default function App() {
                   ) : (
                     messages.length > 0 && (
                       <>
-                        
                         <button
                           onClick={() => {
                             const messageContainer = document.querySelector('.message-bubble');
                             messageContainer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`p-1.5 rounded-lg transition-colors ${
                             isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
                           } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
                           title="跳转到顶部"
@@ -400,7 +441,7 @@ export default function App() {
                             const messageContainer = document.querySelector('.message-bubble:last-child');
                             messageContainer?.scrollIntoView({ behavior: 'smooth', block: 'end' });
                           }}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`p-1.5 rounded-lg transition-colors ${
                             isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
                           } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
                           title="跳转到底部"
@@ -409,12 +450,12 @@ export default function App() {
                         </button>
                         <button
                           onClick={() => setShowSelectMode(true)}
-                          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                          className={`flex items-center space-x-1 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
                             isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
                           } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
                         >
                           <ListChecks className="w-4 h-4" />
-                          <span>多选</span>
+                          <span className="hidden sm:inline">多选</span>
                         </button>
                         
                       </>
@@ -434,6 +475,7 @@ export default function App() {
               userAvatar={user?.avatar || ''}
               userNameColor={user?.userNameColor || 'text-blue-500'}
               chatBackgroundText={botSettings.chatBackgroundText}
+              fontSize={botSettings.fontSize}
               formatTimestamp={formatTimestamp}
               onConvertToTodo={handleConvertToTodo}
               highlightMessageId={highlightMessageId}
@@ -447,14 +489,15 @@ export default function App() {
               hasMessages={false}
               isDarkMode={isDarkMode}
               isBanned={user?.isBanned || false}
+              onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
+              fontSize={botSettings.fontSize}
             />
           </>
         ) : activeTab === 'history' ? (
           <div className="flex flex-col h-full">
-            <div className={`border-b px-4 py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className={`border-b px-2 sm:px-4 py-2 sm:py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {/* Toggle sidebar button */}
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <button
                     onClick={() => setSidebarVisible(!sidebarVisible)}
                     className={`p-1 rounded-lg transition-colors ${
@@ -464,37 +507,37 @@ export default function App() {
                     {sidebarVisible ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                   </button>
                   <div>
-                    <h2 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>聊天记录</h2>
+                    <h2 className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>聊天记录</h2>
                     <p className="text-xs text-gray-400 mt-0.5">共 {chatHistory.length} 条记录</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setShowImportModal(true)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center space-x-1 sm:space-x-2 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
                     } text-white`}
                   >
                     <FileText className="w-4 h-4" />
-                    <span className="text-sm">导入数据</span>
+                    <span>导入</span>
                   </button>
                   <button
                     onClick={() => setShowExportModal(true)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center space-x-1 sm:space-x-2 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'
                     } text-white`}
                   >
                     <Download className="w-4 h-4" />
-                    <span className="text-sm">导出数据</span>
+                    <span>导出</span>
                   </button>
                 </div>
               </div>
             </div>
 
             {showSearchResults ? (
-              <div className={`flex-1 overflow-y-auto p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <div className={`flex-1 overflow-y-auto p-3 sm:p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                <div className="mb-3 sm:mb-4 flex items-center justify-between">
+                  <h3 className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     搜索结果 ({searchResults.length})
                   </h3>
                   <button
@@ -502,12 +545,12 @@ export default function App() {
                       setShowSearchResults(false);
                       setSearchQuery('');
                     }}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-sm transition-colors ${
+                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs sm:text-sm transition-colors ${
                       isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>返回</span>
+                    <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">返回</span>
                   </button>
                 </div>
                   {searchResults.map((result, index) => (
@@ -523,7 +566,7 @@ export default function App() {
                           {formatTimestamp(result.timestamp)}
                         </span>
                       </div>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         {highlightKeyword(result.preview, searchQuery)}
                       </p>
                       <button
@@ -564,6 +607,7 @@ export default function App() {
             sidebarVisible={sidebarVisible}
             onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
             isDarkMode={isDarkMode}
+            isMobile={isMobile}
           />
         )}
       </div>

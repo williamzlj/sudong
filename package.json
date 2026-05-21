@@ -10,7 +10,7 @@
     "type-check": "tsc",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
+    "deploy": "gh-pages -d dist --add",
     "deploy:repo": "cross-env REPO_NAME=YOUR_REPO_NAME npm run build && gh-pages -d dist"
   },
   "dependencies": {

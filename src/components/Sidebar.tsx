@@ -27,7 +27,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             <TreePine className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{botSettings.productName || '收到小助手'}</h1>
+            <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{botSettings.productName || '树洞'}</h1>
             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>{botSettings.productDescription || '倾诉你的心声'}</p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
         {showInfo && (
           <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
             <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              收到小助手是一个安全的匿名聊天空间，您可以放心倾诉心事。所有聊天记录仅保存在本地浏览器中。
+              树洞是一个安全的匿名聊天空间，您可以放心倾诉心事。所有聊天记录仅保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。清空浏览器缓存时会清空数据库！请及时导出和保存数据！使用时请退出无痕浏览模式，因为无痕浏览模式退出时每次都会清空缓存。
             </p>
           </div>
         )}

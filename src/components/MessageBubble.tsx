@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Message } from '../types';
 import { ListTodo, Copy, Download } from 'lucide-react';
 
@@ -11,24 +11,61 @@ interface MessageBubbleProps {
   isSelected?: boolean;
   onToggleSelect?: (messageId: string) => void;
   showSelect?: boolean;
+  fontSize?: number;
 }
 
-export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTimestamp, onConvertToTodo, isSelected = false, onToggleSelect, showSelect = false }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTimestamp, onConvertToTodo, isSelected = false, onToggleSelect, showSelect = false, fontSize = 14 }: MessageBubbleProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const isUser = message.sender === 'user';
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMenu && bubbleRef.current && menuRef.current) {
+        const rect = bubbleRef.current.getBoundingClientRect();
+        const isClickOnBubble = (
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom
+        );
+        const isClickOnMenu = menuRef.current.contains(event.target as Node);
+        
+        if (!isClickOnBubble && !isClickOnMenu) {
+          setShowMenu(false);
+        }
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
 
   const handleMouseDown = () => {
     longPressTimer.current = setTimeout(() => {
       if (bubbleRef.current) {
         const rect = bubbleRef.current.getBoundingClientRect();
-        setMenuPosition({
-          x: rect.right - 100,
-          y: rect.top + 10,
-        });
+        const menuHeight = 200;
+        const viewportHeight = window.innerHeight;
+        const bottomSpace = viewportHeight - rect.bottom;
+        
+        let y = rect.bottom + 8;
+        if (bottomSpace < menuHeight) {
+          y = rect.top - menuHeight - 8;
+        }
+        
+        const x = isUser ? rect.right - 160 : rect.left;
+        
+        setMenuPosition({ x, y });
         setShowMenu(true);
       }
     }, 500);
@@ -44,10 +81,18 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
     longPressTimer.current = setTimeout(() => {
       if (bubbleRef.current) {
         const rect = bubbleRef.current.getBoundingClientRect();
-        setMenuPosition({
-          x: rect.right - 100,
-          y: rect.top + 10,
-        });
+        const menuHeight = 200;
+        const viewportHeight = window.innerHeight;
+        const bottomSpace = viewportHeight - rect.bottom;
+        
+        let y = rect.bottom + 8;
+        if (bottomSpace < menuHeight) {
+          y = rect.top - menuHeight - 8;
+        }
+        
+        const x = isUser ? rect.right - 160 : rect.left;
+        
+        setMenuPosition({ x, y });
         setShowMenu(true);
       }
     }, 500);
@@ -149,12 +194,13 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
             />
           )}
           {message.content && (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="whitespace-pre-wrap" style={{ fontSize: `${fontSize}px` }}>{message.content}</p>
           )}
           <p
-            className={`text-xs mt-1 ${
+            className={`mt-1 ${
               isUser ? 'text-green-200 text-right' : 'text-gray-400'
             }`}
+            style={{ fontSize: `${fontSize - 2}px` }}
           >
             {formatTimestamp(message.timestamp)}
           </p>
@@ -163,11 +209,16 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
       
       {showMenu && (
         <div
+          ref={menuRef}
           className={`fixed rounded-lg shadow-xl border p-2 z-50 min-w-[140px] ${
             isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
           }`}
-          style={{ left: menuPosition.x, top: menuPosition.y }}
-          onClick={handleCancel}
+          style={{ 
+            left: menuPosition.x, 
+            top: menuPosition.y,
+            minHeight: '150px'
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
           <p className={`text-xs mb-2 border-b px-3 py-2 ${
               isDarkMode ? 'text-gray-400 border-gray-600' : 'text-gray-500 border-gray-100'

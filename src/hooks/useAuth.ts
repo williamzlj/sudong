@@ -22,10 +22,11 @@ const defaultBotSettings: BotSettings = {
   name: '小树',
   avatar: 'bg-green-500',
   defaultReply: '收到！',
-  productName: '收到小助手',
+  productName: '树洞',
   productDescription: '倾诉你的心声',
   chatHint: '你的秘密很安全',
   chatBackgroundText: '说出你的心里话吧，我会认真倾听',
+  fontSize: 14,
 };
 
 export const useAuth = () => {

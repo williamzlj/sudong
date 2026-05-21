@@ -50,7 +50,7 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
               <UserPlus className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-800">创建账号</h1>
-            <p className="text-gray-500 mt-2">加入收到小助手小助手，开始你的秘密之旅</p>
+            <p className="text-gray-500 mt-2">加入树洞小助手，开始你的秘密之旅</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -150,7 +150,7 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
         </div>
 
         <p className="text-center text-gray-400 text-sm mt-6">
-          你的隐私很安全，我们不会存储你的密码
+          你的隐私很安全，我们不会存储你的密码和聊天信息，所有数据均保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。清空浏览器缓存时会清空数据库！请及时导出和保存数据！
         </p>
       </div>
     </div>

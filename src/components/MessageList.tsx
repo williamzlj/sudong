@@ -14,6 +14,7 @@ interface MessageListProps {
   userAvatar: string;
   userNameColor?: string;
   chatBackgroundText?: string;
+  fontSize?: number;
   formatTimestamp: (date: Date) => string;
   onConvertToTodo?: (content: string) => void;
   highlightMessageId?: string | null;
@@ -22,7 +23,7 @@ interface MessageListProps {
   showSelect: boolean;
 }
 
-export const MessageList = ({ messages, isTyping, onDeleteMessage, isDarkMode, botName, botAvatar, userName, userAvatar, userNameColor = 'text-blue-500', chatBackgroundText = '说出你的心里话吧，我会认真倾听', formatTimestamp, onConvertToTodo, highlightMessageId, selectedMessages, onToggleSelect, showSelect }: MessageListProps) => {
+export const MessageList = ({ messages, isTyping, onDeleteMessage, isDarkMode, botName, botAvatar, userName, userAvatar, userNameColor = 'text-blue-500', chatBackgroundText = '说出你的心里话吧，我会认真倾听', fontSize = 14, formatTimestamp, onConvertToTodo, highlightMessageId, selectedMessages, onToggleSelect, showSelect }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -101,6 +102,7 @@ export const MessageList = ({ messages, isTyping, onDeleteMessage, isDarkMode, b
                 isSelected={selectedMessages.includes(message.id)}
                 onToggleSelect={onToggleSelect}
                 showSelect={showSelect}
+                fontSize={fontSize}
               />
             </div>
           );
