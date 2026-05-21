@@ -49,7 +49,11 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
       chat.messages.some(msg => msg.content.toLowerCase().includes(query)) ||
       (chat.note && chat.note.toLowerCase().includes(query))
     );
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }).sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;

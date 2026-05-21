@@ -34,15 +34,10 @@ html, body {
   }
   
   #root {
-    height: calc(100vh - env(safe-area-inset-bottom));
-    min-height: calc(100vh - env(safe-area-inset-bottom));
+    height: 100%;
+    min-height: 100vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-  }
-  
-  .app-main-container {
-    height: calc(100vh - env(safe-area-inset-bottom));
-    min-height: calc(100vh - env(safe-area-inset-bottom));
   }
 }
 

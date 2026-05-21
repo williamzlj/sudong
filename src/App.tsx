@@ -28,6 +28,7 @@ export default function App() {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
+  const [safeAreaBottom, setSafeAreaBottom] = useState(0);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,6 +96,39 @@ export default function App() {
       return () => chatContainer.removeEventListener('scroll', handleScroll);
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    const getSafeAreaHeight = () => {
+      let bottom = 0;
+      if (typeof window !== 'undefined' && window.visualViewport) {
+        bottom = window.innerHeight - window.visualViewport.height;
+      } else if (typeof window !== 'undefined') {
+        const envBottom = parseInt(window.getComputedStyle(document.body).getPropertyValue('--safe-area-bottom') || '0');
+        if (!isNaN(envBottom)) {
+          bottom = envBottom;
+        }
+      }
+      setSafeAreaBottom(Math.max(bottom, 0));
+    };
+
+    getSafeAreaHeight();
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', getSafeAreaHeight);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', getSafeAreaHeight);
+        window.visualViewport.addEventListener('scroll', getSafeAreaHeight);
+      }
+      
+      return () => {
+        window.removeEventListener('resize', getSafeAreaHeight);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', getSafeAreaHeight);
+          window.visualViewport.removeEventListener('scroll', getSafeAreaHeight);
+        }
+      };
+    }
+  }, []);
 
   const {
     pendingTodos,
@@ -360,7 +394,7 @@ export default function App() {
   }
 
   return (
-    <div className={`flex h-screen lg:h-screen transition-colors duration-300 overflow-hidden app-main-container`}>
+    <div className={`flex transition-colors duration-300 overflow-hidden`} style={{ height: isMobile ? `calc(100vh - ${safeAreaBottom}px)` : '100vh' }}>
       {/* Sidebar with toggle - hidden by default on mobile */}
       {(sidebarVisible || !isMobile) && (
         <div className={`fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0 ${
