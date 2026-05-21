@@ -100,7 +100,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col safe-area-bottom">
       <div className={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="flex items-center space-x-2">
           <div className="relative flex-1">

@@ -408,7 +408,7 @@ export default function App() {
         />
       )}
 
-      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} min-w-0`}>
+      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} min-w-0 safe-area-bottom`}>
         {activeTab === 'chat' ? (
           <>
             <div className={`border-b px-2 sm:px-4 py-2 sm:py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
