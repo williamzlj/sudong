@@ -281,17 +281,46 @@ export default function App() {
     let copyText = '';
     sortedMsgs.forEach(msg => {
       const timestamp = formatTimestamp(msg.timestamp);
-      const sender = msg.sender === 'user' ? userName : botSettings.name;
+      const sender = msg.sender === 'user' ? (user?.username || '用户') : botSettings.name;
       copyText += `${sender} [${timestamp}]\n${msg.content}\n\n`;
     });
     
     try {
-      await navigator.clipboard.writeText(copyText);
-      alert(`已复制 ${selectedMessages.length} 条消息到剪贴板`);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(copyText);
+        alert(`已复制 ${selectedMessages.length} 条消息到剪贴板`);
+      } else {
+        fallbackCopyToClipboard(copyText);
+      }
     } catch (err) {
       console.error('复制失败:', err);
-      alert('复制失败，请重试');
+      fallbackCopyToClipboard(copyText);
     }
+  };
+
+  const fallbackCopyToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        alert(`已复制 ${selectedMessages.length} 条消息到剪贴板`);
+      } else {
+        alert('复制失败，请手动复制以下内容：\n\n' + text);
+      }
+    } catch (err) {
+      console.error('Fallback复制失败:', err);
+      alert('复制失败，请手动复制以下内容：\n\n' + text);
+    }
+    
+    document.body.removeChild(textArea);
   };
 
   if (!isAuthenticated) {
@@ -404,12 +433,12 @@ export default function App() {
                     </div>
                   )}
                   {showSelectMode ? (
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 sm:space-x-3">
                       <button
                         onClick={handleSelectAll}
-                        className={`flex items-center space-x-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
+                        className={`flex items-center space-x-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors ${
                           isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                        } text-white`}
+                        } text-white min-w-[60px] sm:min-w-[70px]`}
                       >
                         <input
                           type="checkbox"
@@ -422,11 +451,11 @@ export default function App() {
                       <button
                         onClick={handleCopySelected}
                         disabled={selectedMessages.length === 0}
-                        className={`flex items-center space-x-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors ${
                           selectedMessages.length > 0
                             ? isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
                             : 'bg-gray-400 cursor-not-allowed'
-                        } text-white`}
+                        } text-white min-w-[60px] sm:min-w-[75px] justify-center`}
                       >
                         <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span className="hidden sm:inline">复制</span>
@@ -434,11 +463,11 @@ export default function App() {
                       <button
                         onClick={handleDeleteSelected}
                         disabled={selectedMessages.length === 0}
-                        className={`flex items-center space-x-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors ${
                           selectedMessages.length > 0
                             ? isDarkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'
                             : 'bg-gray-400 cursor-not-allowed'
-                        } text-white`}
+                        } text-white min-w-[60px] sm:min-w-[75px] justify-center`}
                       >
                         <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         <span>{selectedMessages.length}</span>
@@ -448,9 +477,9 @@ export default function App() {
                           setShowSelectMode(false);
                           setSelectedMessages([]);
                         }}
-                        className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
+                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors ${
                           isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                        } text-white`}
+                        } text-white min-w-[60px] sm:min-w-[70px]`}
                       >
                         取消
                       </button>
