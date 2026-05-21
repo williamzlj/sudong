@@ -123,7 +123,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
   ];
 
   return (
-    <div className={`border-t px-2 py-2 sm:px-4 sm:py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+    <div className={`border-t px-2 py-2 sm:px-4 sm:py-3 pb-safe ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       {selectedImage && (
         <div className="mb-2 flex items-center space-x-2">
           <div className="relative">

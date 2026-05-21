@@ -8,16 +8,31 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #e5e5e5;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  width: 100%;
 }
 
 #root {
-  height: 100vh;
+  height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  min-height: calc(100vh - env(safe-area-inset-bottom));
+}
+
+@supports (bottom: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pb-safe {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
 }
 
 @keyframes fadeIn {
