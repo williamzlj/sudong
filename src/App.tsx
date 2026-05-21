@@ -672,18 +672,20 @@ export default function App() {
                   ))}
               </div>
             ) : (
-              <ChatHistory
-                history={chatHistory}
-                onLoad={handleLoadChat}
-                onDelete={deleteChat}
-                onUpdateTitle={updateChatTitle}
-                onUpdateNote={updateChatNote}
-                onTogglePin={togglePinChat}
-                onExport={handleExportChat}
-                onSearch={handleSearch}
-                isDarkMode={isDarkMode}
-                formatTimestamp={formatTimestamp}
-              />
+              <div className="flex-1 overflow-hidden">
+                <ChatHistory
+                  history={chatHistory}
+                  onLoad={handleLoadChat}
+                  onDelete={deleteChat}
+                  onUpdateTitle={updateChatTitle}
+                  onUpdateNote={updateChatNote}
+                  onTogglePin={togglePinChat}
+                  onExport={handleExportChat}
+                  onSearch={handleSearch}
+                  isDarkMode={isDarkMode}
+                  formatTimestamp={formatTimestamp}
+                />
+              </div>
             )}
           </div>
         ) : (

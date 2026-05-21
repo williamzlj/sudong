@@ -49,7 +49,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
       chat.messages.some(msg => msg.content.toLowerCase().includes(query)) ||
       (chat.note && chat.note.toLowerCase().includes(query))
     );
-  });
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -100,7 +100,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-full flex flex-col">
       <div className={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="flex items-center space-x-2">
           <div className="relative flex-1">
@@ -289,83 +289,87 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                   </div>
                 </div>
                 
-                <div className="flex space-x-1 ml-2 flex-shrink-0">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTogglePin(chat.id);
-                    }}
-                    className={`p-2 rounded-full transition-colors ${
-                      chat.isPinned 
-                        ? (isDarkMode ? 'text-red-400 hover:bg-red-900' : 'text-red-500 hover:bg-red-50')
-                        : (isDarkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50')
-                    }`}
-                    title={chat.isPinned ? '取消置顶' : '置顶'}
-                  >
-                    <Pin className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowNoteModal(chat.id);
-                      setNoteContent(chat.note || '');
-                    }}
-                    className={`p-2 rounded-full transition-colors ${
-                      isDarkMode ? 'text-gray-500 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
-                    }`}
-                    title="添加备注"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onExport(chat);
-                    }}
-                    className={`p-2 rounded-full transition-colors ${
-                      isDarkMode ? 'text-gray-500 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
-                    }`}
-                    title="导出"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                  {confirmDelete === chat.id ? (
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(chat.id);
-                        }}
-                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                      >
-                        确认
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setConfirmDelete(null);
-                        }}
-                        className={`px-2 py-1 text-xs rounded transition-colors ${
-                          isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        }`}
-                      >
-                        取消
-                      </button>
-                    </div>
-                  ) : (
+                <div className="flex flex-col sm:flex-row sm:space-x-1 ml-2 flex-shrink-0 gap-1 sm:gap-0">
+                  <div className="flex gap-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setConfirmDelete(chat.id);
+                        onTogglePin(chat.id);
                       }}
                       className={`p-2 rounded-full transition-colors ${
-                        isDarkMode ? 'text-gray-500 hover:text-red-400 hover:bg-red-900' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                        chat.isPinned 
+                          ? (isDarkMode ? 'text-red-400 hover:bg-red-900' : 'text-red-500 hover:bg-red-50')
+                          : (isDarkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50')
                       }`}
-                      title="删除"
+                      title={chat.isPinned ? '取消置顶' : '置顶'}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Pin className="w-4 h-4" />
                     </button>
-                  )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowNoteModal(chat.id);
+                        setNoteContent(chat.note || '');
+                      }}
+                      className={`p-2 rounded-full transition-colors ${
+                        isDarkMode ? 'text-gray-500 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
+                      }`}
+                      title="添加备注"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onExport(chat);
+                      }}
+                      className={`p-2 rounded-full transition-colors ${
+                        isDarkMode ? 'text-gray-500 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
+                      }`}
+                      title="导出"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    {confirmDelete === chat.id ? (
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(chat.id);
+                          }}
+                          className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                        >
+                          确认
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmDelete(null);
+                          }}
+                          className={`px-2 py-1 text-xs rounded transition-colors ${
+                            isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDelete(chat.id);
+                        }}
+                        className={`p-2 rounded-full transition-colors ${
+                          isDarkMode ? 'text-gray-500 hover:text-red-400 hover:bg-red-900' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                        }`}
+                        title="删除"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
