@@ -8,6 +8,28 @@
   box-sizing: border-box;
 }
 
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+input[type="date"].date-placeholder-hidden::-webkit-datetime-edit-text,
+input[type="date"].date-placeholder-hidden::-webkit-datetime-edit-month-field,
+input[type="date"].date-placeholder-hidden::-webkit-datetime-edit-day-field,
+input[type="date"].date-placeholder-hidden::-webkit-datetime-edit-year-field {
+  color: transparent !important;
+}
+
+input[type="date"].date-placeholder-hidden:-webkit-autofill {
+  -webkit-text-fill-color: transparent !important;
+}
+
+input[type="date"].date-placeholder-hidden:focus::-webkit-datetime-edit-text,
+input[type="date"].date-placeholder-hidden:focus::-webkit-datetime-edit-month-field,
+input[type="date"].date-placeholder-hidden:focus::-webkit-datetime-edit-day-field,
+input[type="date"].date-placeholder-hidden:focus::-webkit-datetime-edit-year-field {
+  color: inherit !important;
+}
+
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #e5e5e5;

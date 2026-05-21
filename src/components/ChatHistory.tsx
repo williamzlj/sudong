@@ -153,9 +153,9 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
           </button>
         </div>
         
-        <div className="flex items-center space-x-2 mt-3">
+        <div className="flex items-center space-x-2 mt-3 gap-2">
           <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-          <div className="relative flex-1">
+          <div className="relative w-28 sm:w-auto max-w-[160px] sm:max-w-none flex-shrink-0">
             <input
               type="date"
               lang="en"
@@ -164,20 +164,20 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                 setStartDate(e.target.value);
                 handleDateChange();
               }}
-              className={`w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
+              className={`w-full px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-gray-100 border border-gray-300'
-              } ${!startDate ? 'text-transparent' : ''}`}
+              } ${!startDate ? 'text-transparent date-placeholder-hidden' : ''}`}
             />
             {!startDate && (
-              <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none ${
+              <span className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm pointer-events-none ${
                 isDarkMode ? 'text-gray-500' : 'text-gray-400'
               }`}>
                 YYYY/MM/DD
               </span>
             )}
           </div>
-          <span className={isDarkMode ? 'text-gray-500' : 'text-gray-400'}>至</span>
-          <div className="relative flex-1">
+          <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>至</span>
+          <div className="relative w-28 sm:w-auto max-w-[160px] sm:max-w-none flex-shrink-0">
             <input
               type="date"
               lang="en"
@@ -186,12 +186,12 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                 setEndDate(e.target.value);
                 handleDateChange();
               }}
-              className={`w-full px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
+              className={`w-full px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-gray-100 border border-gray-300'
-              } ${!endDate ? 'text-transparent' : ''}`}
+              } ${!endDate ? 'text-transparent date-placeholder-hidden' : ''}`}
             />
             {!endDate && (
-              <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none ${
+              <span className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm pointer-events-none ${
                 isDarkMode ? 'text-gray-500' : 'text-gray-400'
               }`}>
                 YYYY/MM/DD
