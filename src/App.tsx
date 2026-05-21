@@ -12,7 +12,7 @@ import { useChat } from './hooks/useChat';
 import { useAuth } from './hooks/useAuth';
 import { useTodo } from './hooks/useTodo';
 import { ChatHistory as ChatHistoryType } from './types';
-import { ArrowLeft, Check, Download, FileText, Shield, Trash2, ListChecks, ChevronUp, ChevronDown, Menu, X } from 'lucide-react';
+import { ArrowLeft, Check, Download, FileText, Shield, Trash2, ListChecks, ChevronUp, ChevronDown, Menu, X, Copy } from 'lucide-react';
 import { exportDatabase, importDatabase } from './db/indexedDB';
 
 type AuthMode = 'login' | 'register';
@@ -272,6 +272,28 @@ export default function App() {
     }
   };
 
+  const handleCopySelected = async () => {
+    if (selectedMessages.length === 0) return;
+    
+    const selectedMsgs = messages.filter(m => selectedMessages.includes(m.id));
+    const sortedMsgs = [...selectedMsgs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp));
+    
+    let copyText = '';
+    sortedMsgs.forEach(msg => {
+      const timestamp = formatTimestamp(msg.timestamp);
+      const sender = msg.sender === 'user' ? userName : botSettings.name;
+      copyText += `${sender} [${timestamp}]\n${msg.content}\n\n`;
+    });
+    
+    try {
+      await navigator.clipboard.writeText(copyText);
+      alert(`已复制 ${selectedMessages.length} 条消息到剪贴板`);
+    } catch (err) {
+      console.error('复制失败:', err);
+      alert('复制失败，请重试');
+    }
+  };
+
   if (!isAuthenticated) {
     return authMode === 'login' ? (
       <Login
@@ -396,6 +418,18 @@ export default function App() {
                           className="w-3 h-3 sm:w-4 sm:h-4 cursor-pointer"
                         />
                         <span className="hidden sm:inline">全选</span>
+                      </button>
+                      <button
+                        onClick={handleCopySelected}
+                        disabled={selectedMessages.length === 0}
+                        className={`flex items-center space-x-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
+                          selectedMessages.length > 0
+                            ? isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+                            : 'bg-gray-400 cursor-not-allowed'
+                        } text-white`}
+                      >
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">复制</span>
                       </button>
                       <button
                         onClick={handleDeleteSelected}
