@@ -176,7 +176,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               </span>
             )}
           </div>
-          <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>至</span>
+          <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} inline-flex items-center h-full px-1`}>至</span>
           <div className="relative w-26 sm:w-auto max-w-[150px] sm:max-w-none flex-shrink-0">
             <input
               type="date"

@@ -140,7 +140,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
         {showInfo && (
           <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
             <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              树洞是一个安全的匿名聊天空间，您可以放心倾诉心事。所有聊天记录仅保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。清空浏览器缓存时会清空数据库！请及时导出和保存数据！使用时请退出无痕浏览模式，因为无痕浏览模式退出时每次都会清空缓存。
+              树洞是一个安全的匿名聊天空间，您可以放心倾诉心事。所有聊天记录仅保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。清空浏览器缓存时会清空数据库！请及时导出和保存数据！使用时请退出无痕浏览模式，因为无痕浏览模式退出时每次都会清空缓存。本软件由ZLJ开发。2026.5
             </p>
           </div>
         )}
