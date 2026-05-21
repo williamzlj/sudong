@@ -360,7 +360,7 @@ export default function App() {
   }
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} transition-colors duration-300 overflow-hidden`}>
+    <div className={`flex h-screen lg:h-screen transition-colors duration-300 overflow-hidden app-main-container`}>
       {/* Sidebar with toggle - hidden by default on mobile */}
       {(sidebarVisible || !isMobile) && (
         <div className={`fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0 ${
