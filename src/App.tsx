@@ -38,6 +38,8 @@ export default function App() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [adminError, setAdminError] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
+  const [showScrollBottomButton, setShowScrollBottomButton] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -73,6 +75,26 @@ export default function App() {
     exportChatsToWord,
     formatTimestamp,
   } = useChat(user?.id || null, botSettings.defaultReply);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const chatContainer = document.querySelector('.chat-container');
+      if (chatContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        const isAtTop = scrollTop < 50;
+        
+        setShowScrollTopButton(!isAtTop && messages.length > 0);
+        setShowScrollBottomButton(!isAtBottom && messages.length > 0);
+      }
+    };
+
+    const chatContainer = document.querySelector('.chat-container');
+    if (chatContainer) {
+      chatContainer.addEventListener('scroll', handleScroll);
+      return () => chatContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [messages.length]);
 
   const {
     pendingTodos,
@@ -487,30 +509,38 @@ export default function App() {
                   ) : (
                     messages.length > 0 && (
                       <>
-                        <button
-                          onClick={() => {
-                            const messageContainer = document.querySelector('.message-bubble');
-                            messageContainer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
-                          } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
-                          title="跳转到顶部"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            const messageContainer = document.querySelector('.message-bubble:last-child');
-                            messageContainer?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                          }}
-                          className={`p-1.5 rounded-lg transition-colors ${
-                            isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
-                          } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
-                          title="跳转到底部"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
+                        {showScrollTopButton && (
+                          <button
+                            onClick={() => {
+                              const chatContainer = document.querySelector('.chat-container');
+                              if (chatContainer) {
+                                chatContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                              }
+                            }}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
+                            } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                            title="跳转到顶部"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                        )}
+                        {showScrollBottomButton && (
+                          <button
+                            onClick={() => {
+                              const chatContainer = document.querySelector('.chat-container');
+                              if (chatContainer) {
+                                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+                              }
+                            }}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
+                            } ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                            title="跳转到底部"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setShowSelectMode(true)}
                           className={`flex items-center space-x-1 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${

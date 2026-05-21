@@ -56,7 +56,7 @@ export const MessageList = ({ messages, isTyping, onDeleteMessage, isDarkMode, b
   }
 
   return (
-    <div className={`flex-1 overflow-y-auto px-4 py-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+    <div className={`flex-1 overflow-y-auto px-4 py-4 chat-container ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
       <div>
         {messages.map((message, index) => {
           const isHighlighted = message.id === highlightMessageId;
