@@ -394,7 +394,7 @@ export default function App() {
   }
 
   return (
-    <div className={`flex transition-colors duration-300 overflow-hidden`} style={{ height: isMobile ? `calc(100vh - ${safeAreaBottom}px)` : '100vh' }}>
+    <div className={`flex h-screen transition-colors duration-300 overflow-hidden`}>
       {/* Sidebar with toggle - hidden by default on mobile */}
       {(sidebarVisible || !isMobile) && (
         <div className={`fixed lg:static inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0 ${
@@ -442,7 +442,7 @@ export default function App() {
         />
       )}
 
-      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} min-w-0 safe-area-bottom`}>
+      <div className={`flex-1 flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} min-w-0 lg:static fixed inset-y-0 right-0 z-10 w-full lg:w-auto`} style={{ paddingBottom: isMobile ? `${safeAreaBottom}px` : '0' }}>
         {activeTab === 'chat' ? (
           <>
             <div className={`border-b px-2 sm:px-4 py-2 sm:py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>

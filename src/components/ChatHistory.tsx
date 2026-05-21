@@ -228,14 +228,14 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               }`}
               onClick={() => onLoad(chat)}
             >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 flex items-start space-x-3">
+              <div className="flex items-start justify-between mb-2 gap-2">
+                <div className="flex-1 flex items-start space-x-3" style={{ minWidth: 0 }}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isDarkMode ? 'bg-gray-700' : 'bg-green-100'
                   }`}>
                     <Clock className={`w-5 h-5 ${isDarkMode ? 'text-green-400' : 'text-green-500'}`} />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1" style={{ minWidth: 0, wordBreak: 'break-word' }}>
                     {editingChatId === chat.id ? (
                       <div className="flex items-center space-x-2 mb-1">
                         <input
@@ -282,13 +282,15 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                       {formatTimestamp(chat.createdAt)} · {chat.messages.length} 条消息
                     </p>
                     {chat.note && (
-                      <div className="flex items-center space-x-1 mb-1">
-                        <FileText className="w-3 h-3 text-gray-400" />
-                        <p className="text-xs text-gray-500 truncate">{chat.note}</p>
+                      <div className="flex items-start space-x-2 mb-1">
+                        <FileText className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} px-2 py-1 rounded`} style={{ backgroundColor: isDarkMode ? '#4A5568' : '#D1D5DB', wordBreak: 'break-word', overflowWrap: 'break-word', maxHeight: '10em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 10, WebkitBoxOrient: 'vertical' }}>
+                          {chat.note}
+                        </p>
                       </div>
                     )}
-                    <p className={`text-xs truncate ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                      {chat.messages.length > 0 ? chat.messages[0].content.slice(0, 50) + (chat.messages[0].content.length > 50 ? '...' : '') : '空对话'}
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word', maxWidth: '100%', whiteSpace: 'pre-wrap' }}>
+                      {chat.messages.length > 0 ? chat.messages[0].content.slice(0, 80) + (chat.messages[0].content.length > 80 ? '...' : '') : '空对话'}
                     </p>
                   </div>
                 </div>
