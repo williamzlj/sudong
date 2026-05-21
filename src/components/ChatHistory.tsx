@@ -155,7 +155,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
         
         <div className="flex items-center space-x-2 mt-3 gap-2">
           <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-          <div className="relative w-28 sm:w-auto max-w-[160px] sm:max-w-none flex-shrink-0">
+          <div className="relative w-26 sm:w-auto max-w-[150px] sm:max-w-none flex-shrink-0">
             <input
               type="date"
               lang="en"
@@ -177,7 +177,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
             )}
           </div>
           <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>至</span>
-          <div className="relative w-28 sm:w-auto max-w-[160px] sm:max-w-none flex-shrink-0">
+          <div className="relative w-26 sm:w-auto max-w-[150px] sm:max-w-none flex-shrink-0">
             <input
               type="date"
               lang="en"
