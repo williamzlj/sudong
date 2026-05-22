@@ -12,7 +12,7 @@ interface InputBoxProps {
   fontSize?: number;
 }
 
-export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDarkMode = false, isBanned = false, onToggleSidebar, fontSize = 14 }: InputBoxProps) => {
+export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDarkMode = false, isBanned = false, onToggleSidebar, fontSize = 16 }: InputBoxProps) => {
   const [input, setInput] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -20,7 +20,8 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const MAX_LINES = 15;
-  const LINE_HEIGHT = 20;
+  const LINE_HEIGHT = fontSize * 1.4;
+  const MIN_HEIGHT = fontSize + 16;
 
   const MAX_WIDTH = 600;
   const MAX_SIZE_KB = 400;
@@ -81,7 +82,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
       
       const textarea = textareaRef.current;
       if (textarea) {
-        textarea.style.height = '36px';
+        textarea.style.height = `${MIN_HEIGHT}px`;
       }
     }
   };
@@ -140,74 +141,76 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
           </div>
         </div>
       )}
-      <div className="flex items-center gap-0.5 sm:gap-1">
-        {hasMessages && (
-          <button
-            onClick={onSave}
-            className={`p-1.5 sm:p-2 rounded-full transition-colors ${
-              isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-            }`}
-            title="保存聊天记录"
-          >
-            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        )}
-        {onToggleSidebar && (
-          <button
-            onClick={onToggleSidebar}
-            className={`p-1.5 sm:p-2 rounded-full transition-colors ${
-              isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-            }`}
-            title="切换左侧面板"
-          >
-            <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className={`p-1.5 sm:p-2 rounded-full transition-colors ${
-            isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-          }`}
-          title="上传图片"
-        >
-          <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-        <div className="relative">
-          <button
-            onClick={() => setShowEmoji(!showEmoji)}
-            className={`p-1.5 sm:p-2 rounded-full transition-colors ${
-              isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-            }`}
-            title="表情"
-          >
-            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          {showEmoji && (
-            <div className={`absolute bottom-full left-0 mb-2 p-2 rounded-lg shadow-lg border grid grid-cols-10 gap-7 ${
-              isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
-            }`}>
-              {emojis.map((emoji, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleEmojiClick(emoji)}
-                  className={`text-xl p-1 rounded transition-colors ${
-                    isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+      <div className="flex items-center gap-0.5 sm:gap-1 w-full" style={{ maxWidth: '100%' }}>
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+          {hasMessages && (
+            <button
+              onClick={onSave}
+              className={`p-1.5 sm:p-2 rounded-full transition-colors ${
+                isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+              }`}
+              title="保存聊天记录"
+            >
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
           )}
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              className={`p-1.5 sm:p-2 rounded-full transition-colors ${
+                isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+              }`}
+              title="切换左侧面板"
+            >
+              <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className={`p-1.5 sm:p-2 rounded-full transition-colors ${
+              isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+            }`}
+            title="上传图片"
+          >
+            <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowEmoji(!showEmoji)}
+              className={`p-1.5 sm:p-2 rounded-full transition-colors ${
+                isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+              }`}
+              title="表情"
+            >
+              <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            {showEmoji && (
+              <div className={`absolute bottom-full left-0 mb-2 p-2 rounded-lg shadow-lg border grid grid-cols-10 gap-7 ${
+                isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+              }`}>
+                {emojis.map((emoji, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleEmojiClick(emoji)}
+                    className={`text-xl p-1 rounded transition-colors ${
+                      isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex-1 flex items-center rounded-full px-3 py-1.5 sm:px-4 sm:py-2">
+        <div className="flex-1 flex items-center rounded-2xl px-3 sm:px-4 ml-1 overflow-hidden" style={{ maxWidth: 'calc(100% - 120px)' }}>
           <textarea
             ref={textareaRef}
             value={input}
@@ -223,16 +226,20 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
                 : 'bg-gray-100 text-gray-800 placeholder-gray-400'
             } ${disabled || isBanned ? 'opacity-50 cursor-not-allowed' : ''}`}
             style={{ 
-              minHeight: '36px', 
+              minHeight: `${MIN_HEIGHT}px`, 
               maxHeight: `${MAX_LINES * LINE_HEIGHT}px`, 
               lineHeight: `${LINE_HEIGHT}px`,
-              fontSize: `${fontSize}px`
+              fontSize: `${fontSize}px`,
+              paddingTop: '8px',
+              paddingBottom: '8px',
+              boxSizing: 'border-box',
+              width: '100%'
             }}
           />
           <button
             onClick={handleSubmit}
             disabled={(!input.trim() && !selectedImage) || disabled}
-            className={`ml-1 p-1.5 rounded-full transition-all duration-200 ${
+            className={`ml-1 p-1.5 rounded-full transition-all duration-200 flex-shrink-0 ${
               (input.trim() || selectedImage) && !disabled
                 ? 'bg-green-500 text-white hover:bg-green-600 shadow-md hover:shadow-lg'
                 : `${isDarkMode ? 'bg-gray-600 text-gray-400' : 'bg-gray-200 text-gray-400'} cursor-not-allowed`

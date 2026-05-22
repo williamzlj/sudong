@@ -191,7 +191,7 @@ export default function App() {
 
   const handleExportChat = (chat: ChatHistoryType) => {
     const content = exportChatToWord(chat);
-    downloadFile(content, `${chat.title}.txt`, 'text/plain');
+    downloadFile(content, `${chat.title}_${getExportDate()}.txt`, 'text/plain');
   };
 
   const handleExportAll = () => {
@@ -210,8 +210,8 @@ export default function App() {
 
     const content = exportChatsToWord(chatsToExport);
     const filename = exportStartDate || exportEndDate 
-      ? `聊天记录_${exportStartDate || '最早'}_${exportEndDate || '最晚'}.txt`
-      : '聊天记录汇总.txt';
+      ? `聊天记录_${exportStartDate || '最早'}_${exportEndDate || '最晚'}_${getExportDate()}.txt`
+      : `聊天记录汇总_${getExportDate()}.txt`;
     downloadFile(content, filename, 'text/plain');
     setShowExportModal(false);
     setExportStartDate('');
@@ -221,7 +221,7 @@ export default function App() {
   const handleExportDatabase = async () => {
     try {
       const data = await exportDatabase();
-      downloadFile(data, 'tree-hole-backup.json', 'application/json');
+      downloadFile(data, `tree-hole-backup_${getExportDate()}.json`, 'application/json');
       setShowExportModal(false);
     } catch (error) {
       console.error('Failed to export database:', error);
@@ -249,6 +249,11 @@ export default function App() {
     } else {
       setAdminError('密码错误');
     }
+  };
+
+  const getExportDate = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   };
 
   const downloadFile = (content: string, filename: string, type: string) => {

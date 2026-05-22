@@ -23,7 +23,7 @@ interface MessageListProps {
   showSelect: boolean;
 }
 
-export const MessageList = ({ messages, isTyping, onDeleteMessage, isDarkMode, botName, botAvatar, userName, userAvatar, userNameColor = 'text-blue-500', chatBackgroundText = '说出你的心里话吧，我会认真倾听', fontSize = 14, formatTimestamp, onConvertToTodo, highlightMessageId, selectedMessages, onToggleSelect, showSelect }: MessageListProps) => {
+export const MessageList = ({ messages, isTyping, onDeleteMessage, isDarkMode, botName, botAvatar, userName, userAvatar, userNameColor = 'text-blue-500', chatBackgroundText = '说出你的心里话吧，我会认真倾听', fontSize = 16, formatTimestamp, onConvertToTodo, highlightMessageId, selectedMessages, onToggleSelect, showSelect }: MessageListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

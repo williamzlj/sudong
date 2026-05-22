@@ -26,7 +26,7 @@ const defaultBotSettings: BotSettings = {
   productDescription: '倾诉你的心声',
   chatHint: '你的秘密很安全',
   chatBackgroundText: '说出你的心里话吧，我会认真倾听',
-  fontSize: 14,
+  fontSize: 16,
 };
 
 export const useAuth = () => {

@@ -50,7 +50,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
   const [productDescription, setProductDescription] = useState(botSettings.productDescription || '倾诉你的心声');
   const [chatHint, setChatHint] = useState(botSettings.chatHint || '你的秘密很安全');
   const [chatBackgroundText, setChatBackgroundText] = useState(botSettings.chatBackgroundText || '说出你的心里话吧，我会认真倾听');
-  const [fontSize, setFontSize] = useState(botSettings.fontSize || 14);
+  const [fontSize, setFontSize] = useState(botSettings.fontSize || 16);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const botFileInputRef = useRef<HTMLInputElement>(null);

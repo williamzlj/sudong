@@ -155,7 +155,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
         
         <div className="flex items-center space-x-2 mt-3 gap-2">
           <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-          <div className="relative w-26 sm:w-auto max-w-[150px] sm:max-w-none flex-shrink-0">
+          <div className="relative flex-shrink-0" style={{ width: '104px', minWidth: '104px', maxWidth: '150px' }}>
             <input
               type="date"
               lang="en"
@@ -167,6 +167,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               className={`w-full px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-gray-100 border border-gray-300'
               } ${!startDate ? 'text-transparent date-placeholder-hidden' : ''}`}
+              style={{ boxSizing: 'border-box', appearance: 'none', WebkitAppearance: 'none' }}
             />
             {!startDate && (
               <span className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm pointer-events-none ${
@@ -177,7 +178,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
             )}
           </div>
           <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} inline-flex items-center h-full px-1`}>至</span>
-          <div className="relative w-26 sm:w-auto max-w-[150px] sm:max-w-none flex-shrink-0">
+          <div className="relative flex-shrink-0" style={{ width: '104px', minWidth: '104px', maxWidth: '150px' }}>
             <input
               type="date"
               lang="en"
@@ -189,6 +190,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               className={`w-full px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-gray-100 border border-gray-300'
               } ${!endDate ? 'text-transparent date-placeholder-hidden' : ''}`}
+              style={{ boxSizing: 'border-box', appearance: 'none', WebkitAppearance: 'none' }}
             />
             {!endDate && (
               <span className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm pointer-events-none ${

@@ -67,7 +67,7 @@ export const initDB = (): Promise<IDBDatabase> => {
             if (cursor) {
               const settings = cursor.value;
               if (!settings.fontSize) {
-                settings.fontSize = 14;
+                settings.fontSize = 16;
                 cursor.update(settings);
               }
               cursor.continue();
@@ -230,7 +230,7 @@ export const getBotSettings = async (userId: string): Promise<BotSettings> => {
           productDescription: result.productDescription || '倾诉你的心声',
           chatHint: result.chatHint || '你的秘密很安全',
           chatBackgroundText: result.chatBackgroundText || '说出你的心里话吧，我会认真倾听',
-          fontSize: result.fontSize || 14,
+          fontSize: result.fontSize || 16,
         };
         resolve(settings);
       } else {
@@ -242,7 +242,7 @@ export const getBotSettings = async (userId: string): Promise<BotSettings> => {
           productDescription: '倾诉你的心声',
           chatHint: '你的秘密很安全',
           chatBackgroundText: '说出你的心里话吧，我会认真倾听',
-          fontSize: 14,
+          fontSize: 16,
         };
         saveBotSettings(userId, defaultSettings).then(() => resolve(defaultSettings));
       }

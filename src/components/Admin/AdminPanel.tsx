@@ -17,6 +17,11 @@ const hashPassword = (password: string): string => {
   return hash.toString(36);
 };
 
+const getExportDate = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
 export const AdminPanel = ({ onClose }: AdminPanelProps) => {
   const [users, setUsers] = useState<UserType[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
@@ -182,7 +187,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `user_${user.username}_data.json`;
+      a.download = `user_${user.username}_data_${getExportDate()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -203,7 +208,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'all_users_data.json';
+      a.download = `all_users_data_${getExportDate()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

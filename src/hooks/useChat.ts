@@ -4,6 +4,16 @@ import { saveChatHistory, getChatHistoryByUserId, deleteChatHistory, saveMessage
 
 const AUTO_SAVE_DELAY = 2000;
 
+const getMessagesHash = (msgs: Message[]): string => {
+  return JSON.stringify(msgs.map(m => ({
+    id: m.id,
+    content: m.content,
+    sender: m.sender,
+    timestamp: m.timestamp,
+    image: m.image
+  })));
+};
+
 const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
@@ -38,6 +48,7 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
   const hasUnsavedChanges = useRef(false);
   const currentChatId = useRef<string | null>(null);
   const defaultReplyRef = useRef(defaultReply);
+  const lastSavedMessagesHash = useRef<string>('');
 
   useEffect(() => {
     defaultReplyRef.current = defaultReply;
@@ -64,18 +75,26 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
   }, [userId]);
 
   useEffect(() => {
-    if (messages.length > 0 && !hasUnsavedChanges.current) {
+    if (messages.length === 0 || !userId) {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+      return;
+    }
+
+    const currentHash = getMessagesHash(messages);
+    
+    if (currentHash !== lastSavedMessagesHash.current) {
       hasUnsavedChanges.current = true;
-    }
+      
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
 
-    if (autoSaveTimer.current) {
-      clearTimeout(autoSaveTimer.current);
-    }
-
-    if (messages.length > 0 && userId) {
       autoSaveTimer.current = setTimeout(() => {
         if (hasUnsavedChanges.current) {
           saveChat(userId);
+          lastSavedMessagesHash.current = getMessagesHash(messages);
           hasUnsavedChanges.current = false;
         }
       }, AUTO_SAVE_DELAY);
@@ -161,9 +180,12 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
   const loadChat = useCallback(async (chat: ChatHistory) => {
     try {
       const chatMessages = await getMessagesByChatId(chat.id);
-      setMessages(chatMessages.length > 0 ? chatMessages : chat.messages);
+      const loadedMessages = chatMessages.length > 0 ? chatMessages : chat.messages;
+      setMessages(loadedMessages);
+      lastSavedMessagesHash.current = getMessagesHash(loadedMessages);
     } catch {
       setMessages(chat.messages);
+      lastSavedMessagesHash.current = getMessagesHash(chat.messages);
     }
     currentChatId.current = chat.id;
     hasUnsavedChanges.current = false;
@@ -214,6 +236,7 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
     setMessages([]);
     currentChatId.current = null;
     hasUnsavedChanges.current = false;
+    lastSavedMessagesHash.current = '';
   }, []);
 
   const updateChatTitle = useCallback(async (chatId: string, title: string) => {

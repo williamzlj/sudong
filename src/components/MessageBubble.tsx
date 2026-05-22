@@ -14,7 +14,7 @@ interface MessageBubbleProps {
   fontSize?: number;
 }
 
-export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTimestamp, onConvertToTodo, isSelected = false, onToggleSelect, showSelect = false, fontSize = 14 }: MessageBubbleProps) => {
+export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTimestamp, onConvertToTodo, isSelected = false, onToggleSelect, showSelect = false, fontSize = 16 }: MessageBubbleProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
