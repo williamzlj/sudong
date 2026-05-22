@@ -155,7 +155,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
         
         <div className="flex items-center space-x-2 mt-3 gap-2">
           <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-          <div className="relative flex-shrink-0" style={{ width: '120px', minWidth: '120px', maxWidth: '160px', height: '36px' }}>
+          <div className="relative flex-shrink-0" style={{ width: '130px', minWidth: '130px', maxWidth: '170px', height: '40px' }}>
             <input
               type="date"
               lang="zh-CN"
@@ -164,21 +164,29 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                 setStartDate(e.target.value);
                 handleDateChange();
               }}
-              className={`w-full px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
+              className={`w-full px-3 py-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-gray-100 border border-gray-300'
               } ${!startDate ? 'text-transparent date-placeholder-hidden' : ''}`}
-              style={{ boxSizing: 'border-box', appearance: 'none', WebkitAppearance: 'none', minHeight: '36px' }}
+              style={{ 
+                boxSizing: 'border-box', 
+                appearance: 'none', 
+                WebkitAppearance: 'none', 
+                minHeight: '40px',
+                lineHeight: '1.5',
+                fontSize: '14px',
+                WebkitBoxSizing: 'border-box'
+              }}
             />
             {!startDate && (
-              <span className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm pointer-events-none ${
+              <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none ${
                 isDarkMode ? 'text-gray-500' : 'text-gray-400'
               }`}>
                 YYYY/MM/DD
               </span>
             )}
           </div>
-          <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} inline-flex items-center h-full px-1`}>至</span>
-          <div className="relative flex-shrink-0" style={{ width: '120px', minWidth: '120px', maxWidth: '160px', height: '36px' }}>
+          <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} inline-flex items-center h-full px-2`}>至</span>
+          <div className="relative flex-shrink-0" style={{ width: '130px', minWidth: '130px', maxWidth: '170px', height: '40px' }}>
             <input
               type="date"
               lang="zh-CN"
@@ -187,10 +195,18 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                 setEndDate(e.target.value);
                 handleDateChange();
               }}
-              className={`w-full px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
+              className={`w-full px-3 py-3 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 border border-gray-600 text-white' : 'bg-gray-100 border border-gray-300'
               } ${!endDate ? 'text-transparent date-placeholder-hidden' : ''}`}
-              style={{ boxSizing: 'border-box', appearance: 'none', WebkitAppearance: 'none', minHeight: '36px' }}
+              style={{ 
+                boxSizing: 'border-box', 
+                appearance: 'none', 
+                WebkitAppearance: 'none', 
+                minHeight: '40px',
+                lineHeight: '1.5',
+                fontSize: '14px',
+                WebkitBoxSizing: 'border-box'
+              }}
             />
             {!endDate && (
               <span className={`absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm pointer-events-none ${
