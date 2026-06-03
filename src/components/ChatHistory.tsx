@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatHistory as ChatHistoryType } from '../types';
-import { Clock, Trash2, FolderOpen, Search, X, Edit2, FileText, Download, Calendar, Pin } from 'lucide-react';
+import { Clock, Trash2, FolderOpen, Search, X, Edit2, FileText, Download, Calendar, Pin, CheckSquare } from 'lucide-react';
 
 interface ChatHistoryProps {
   history: ChatHistoryType[];
@@ -189,19 +189,20 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
         <div className="flex items-center space-x-2 mt-3 gap-2 flex-wrap">
           <button
             onClick={handleSelectAll}
-            className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${
+            title={t('selectAll')}
+            className={`flex items-center justify-center p-1.5 rounded-lg transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <input
-              type="checkbox"
-              checked={selectedChatIds.length === currentPageData.length && currentPageData.length > 0}
-              onChange={handleSelectAll}
-              className="w-3 h-3 rounded"
+            <CheckSquare
+              className={`w-4 h-4 ${
+                selectedChatIds.length === currentPageData.length && currentPageData.length > 0
+                  ? (isDarkMode ? 'text-green-400' : 'text-green-500')
+                  : ''
+              }`}
             />
-            <span>{t('selectAll')}</span>
           </button>
-          <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+          <Calendar className={`w-4 h-4 hidden sm:block ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
           <div className="relative flex-shrink-0" style={{ width: '130px', minWidth: '130px', maxWidth: '170px', height: '40px' }}>
             <input
               type="date"
