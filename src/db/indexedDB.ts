@@ -223,25 +223,25 @@ export const getBotSettings = async (userId: string): Promise<BotSettings> => {
       const result = request.result;
       if (result) {
         const settings: BotSettings = {
-          name: result.name || '小树',
+          name: result.name || '',
           avatar: result.avatar || 'bg-green-500',
-          defaultReply: result.defaultReply || '收到！',
-          productName: result.productName || '树洞',
-          productDescription: result.productDescription || '倾诉你的心声',
-          chatHint: result.chatHint || '你的秘密很安全',
-          chatBackgroundText: result.chatBackgroundText || '说出你的心里话吧，我会认真倾听',
+          defaultReply: result.defaultReply || '',
+          productName: result.productName || '',
+          productDescription: result.productDescription || '',
+          chatHint: result.chatHint || '',
+          chatBackgroundText: result.chatBackgroundText || '',
           fontSize: result.fontSize || 16,
         };
         resolve(settings);
       } else {
         const defaultSettings: BotSettings = { 
-          name: '小树', 
+          name: '', 
           avatar: 'bg-green-500', 
-          defaultReply: '收到！',
-          productName: '树洞',
-          productDescription: '倾诉你的心声',
-          chatHint: '你的秘密很安全',
-          chatBackgroundText: '说出你的心里话吧，我会认真倾听',
+          defaultReply: '',
+          productName: '',
+          productDescription: '',
+          chatHint: '',
+          chatBackgroundText: '',
           fontSize: 16,
         };
         saveBotSettings(userId, defaultSettings).then(() => resolve(defaultSettings));

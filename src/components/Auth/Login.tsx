@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { LoginCredentials } from '../../types/auth';
 import { Eye, EyeOff, Lock, Mail, LogIn } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '../LanguageSelector';
 
 interface LoginProps {
   onLogin: (credentials: LoginCredentials) => Promise<{ success: boolean; message: string }>;
@@ -8,6 +10,7 @@ interface LoginProps {
 }
 
 export const Login = ({ onLogin, onSwitchToRegister }: LoginProps) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -36,20 +39,20 @@ export const Login = ({ onLogin, onSwitchToRegister }: LoginProps) => {
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <LogIn className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">欢迎回来</h1>
-            <p className="text-gray-500 mt-2">登录你的树洞账号</p>
+            <h1 className="text-2xl font-bold text-gray-800">{t('loginWelcome')}</h1>
+            <p className="text-gray-500 mt-2">{t('loginSubtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="请输入邮箱"
+                  placeholder={t('emailPlaceholder')}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                   required
                 />
@@ -57,14 +60,14 @@ export const Login = ({ onLogin, onSwitchToRegister }: LoginProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">密码</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="请输入密码"
+                  placeholder={t('passwordPlaceholder')}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                   required
                 />
@@ -89,26 +92,31 @@ export const Login = ({ onLogin, onSwitchToRegister }: LoginProps) => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? '登录中...' : '登录'}
+              {isLoading ? t('loggingIn') : t('login')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              还没有账号？{' '}
+              {t('noAccount')}{' '}
               <button
                 onClick={onSwitchToRegister}
                 className="text-green-600 hover:text-green-700 font-medium underline"
               >
-                立即注册
+                {t('registerNow')}
               </button>
             </p>
+            <div className="flex justify-center mt-4">
+              <LanguageSelector />
+            </div>
           </div>
         </div>
 
-        <p className="text-center text-gray-400 text-sm mt-6">
-          树洞是一个安全的匿名聊天空间，您可以放心倾诉心事。你的隐私很安全，我们不会储存你的密码和聊天信息，所有聊天记录仅保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。请及时导出和保存数据！使用时请关闭无痕浏览模式，清空浏览器缓存时会清空数据库！数据丢失后无法恢复！请不要用来做重要的事项的记录！<br></br>本软件由张亮军开发（张亮数理化 无锡·海岸城）。2026.5
+        <p className="text-center text-gray-500 text-xs mt-4 italic">
+          {t('languagePrompt')}
         </p>
+
+        <p className="text-center text-gray-400 text-sm mt-4" dangerouslySetInnerHTML={{ __html: t('loginIntro') }} />
       </div>
     </div>
   );

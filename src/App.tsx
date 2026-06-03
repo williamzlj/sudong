@@ -22,6 +22,11 @@ type AuthMode = 'login' | 'register';
 
 export default function App() {
   const { t } = useTranslation();
+
+  // 动态更新网页标题
+  useEffect(() => {
+    document.title = t('appTitle');
+  }, [t, i18n.language]);
   const [activeTab, setActiveTab] = useState<'chat' | 'history' | 'todo'>('chat');
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isFromHistory, setIsFromHistory] = useState(false);

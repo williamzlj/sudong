@@ -148,9 +148,10 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
         </div>
         {showInfo && (
           <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-            <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              {t('aboutText')}
-            </p>
+            <p
+              className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+              dangerouslySetInnerHTML={{ __html: t('loginIntro') }}
+            />
           </div>
         )}
       </div>

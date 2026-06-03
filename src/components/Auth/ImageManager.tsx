@@ -160,7 +160,7 @@ export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) 
             ) : (
               <Square className="w-4 h-4" />
             )}
-            <span>{selectedImages.size === images.length ? '取消全选' : '全选'}</span>
+            <span>{selectedImages.size === images.length ? t('deselectAll') : t('selectAll')}</span>
           </button>
           
           {selectedImages.size > 0 && (
@@ -170,14 +170,14 @@ export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) 
                 className="flex items-center space-x-2 px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>保存选中 ({selectedImages.size})</span>
+                <span>{t('saveSelected', { count: selectedImages.size })}</span>
               </button>
               <button
                 onClick={handleDelete}
                 className="flex items-center space-x-2 px-3 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>删除选中 ({selectedImages.size})</span>
+                <span>{t('deleteSelected', { count: selectedImages.size })}</span>
               </button>
             </div>
           )}
@@ -191,7 +191,7 @@ export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) 
       ) : images.length === 0 ? (
         <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           <Image className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>暂无上传的图片</p>
+          <p>{t('noUploadedImages')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -255,11 +255,11 @@ export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) 
                 <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
               <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                确认删除
+                {t('deleteImageTitle')}
               </h3>
             </div>
             <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              确定要删除选中的 {selectedImages.size} 张图片吗？此操作无法撤销。
+              {t('deleteSelectedImagesConfirm', { count: selectedImages.size })}
             </p>
             <div className="flex space-x-3">
               <button
@@ -270,13 +270,13 @@ export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmDelete}
                 className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
               >
-                删除
+                {t('delete')}
               </button>
             </div>
           </div>

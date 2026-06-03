@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { RegisterCredentials } from '../../types/auth';
 import { Eye, EyeOff, User, Lock, Mail, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '../LanguageSelector';
 
 interface RegisterProps {
   onRegister: (credentials: RegisterCredentials) => { success: boolean; message: string };
@@ -8,6 +10,7 @@ interface RegisterProps {
 }
 
 export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,12 +24,12 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('两次输入的密码不一致');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('密码长度至少需要6位');
+      setError(t('newPasswordTooShort'));
       return;
     }
 
@@ -49,20 +52,20 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <UserPlus className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">创建账号</h1>
-            <p className="text-gray-500 mt-2">加入树洞小助手，开始你的秘密之旅</p>
+            <h1 className="text-2xl font-bold text-gray-800">{t('registerTitle')}</h1>
+            <p className="text-gray-500 mt-2">{t('registerSubtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('username')}</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  placeholder="请输入用户名"
+                  placeholder={t('usernamePlaceholder')}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                   required
                 />
@@ -70,14 +73,14 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('email')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="请输入邮箱"
+                  placeholder={t('emailPlaceholder')}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                   required
                 />
@@ -85,14 +88,14 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">密码</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('password')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="请输入密码（至少6位）"
+                  placeholder={t('newPasswordPlaceholder')}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                   required
                 />
@@ -107,14 +110,14 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">确认密码</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('confirmPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="请再次输入密码"
+                  placeholder={t('confirmPasswordPlaceholder')}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                   required
                 />
@@ -132,26 +135,31 @@ export const Register = ({ onRegister, onSwitchToLogin }: RegisterProps) => {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? '注册中...' : '注册'}
+              {isLoading ? t('registering') : t('register')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              已有账号？{' '}
+              {t('haveAccount')}{' '}
               <button
                 onClick={onSwitchToLogin}
                 className="text-green-600 hover:text-green-700 font-medium underline"
               >
-                立即登录
+                {t('loginNow')}
               </button>
             </p>
+            <div className="flex justify-center mt-4">
+              <LanguageSelector />
+            </div>
           </div>
         </div>
 
-        <p className="text-center text-gray-400 text-sm mt-6">
-          你的隐私很安全，我们不会存储你的密码和聊天信息，所有数据均保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。清空浏览器缓存时会清空数据库！请及时导出和保存数据！
+        <p className="text-center text-gray-500 text-xs mt-4 italic">
+          {t('languagePrompt')}
         </p>
+
+        <p className="text-center text-gray-400 text-sm mt-4">{t('registerIntro')}</p>
       </div>
     </div>
   );

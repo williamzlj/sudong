@@ -19,13 +19,13 @@ const hashPassword = (password: string): string => {
 };
 
 const defaultBotSettings: BotSettings = {
-  name: '小树',
+  name: '',
   avatar: 'bg-green-500',
-  defaultReply: '收到！',
-  productName: '树洞',
-  productDescription: '倾诉你的心声',
-  chatHint: '你的秘密很安全',
-  chatBackgroundText: '说出你的心里话吧，我会认真倾听',
+  defaultReply: '',
+  productName: '',
+  productDescription: '',
+  chatHint: '',
+  chatBackgroundText: '',
   fontSize: 16,
 };
 
