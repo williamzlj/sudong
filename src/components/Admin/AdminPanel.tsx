@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Edit3, User, Mail, Lock, AlertCircle, CheckCircle, Settings, Download, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { X, Plus, Trash2, Edit3, User, Mail, Lock, AlertCircle, CheckCircle, Settings, Download, RefreshCw, Upload, Database } from 'lucide-react';
 import { User as UserType } from '../../types/auth';
-import { getAllUsers, updateUser, deleteUser, saveUser, getChatHistoryByUserId, getMessagesByChatId, getTodosByUserId, getBotSettings, exportDatabase } from '../../db/indexedDB';
+import { getAllUsers, updateUser, deleteUser, saveUser, getChatHistoryByUserId, getMessagesByChatId, getTodosByUserId, getBotSettings, exportAllDatabase, importDatabase } from '../../db/indexedDB';
 
 interface AdminPanelProps {
   onClose: () => void;
@@ -23,12 +24,14 @@ const getExportDate = () => {
 };
 
 export const AdminPanel = ({ onClose }: AdminPanelProps) => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserType[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showExportUserModal, setShowExportUserModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -109,14 +112,34 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('确定要删除该用户吗？')) return;
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) return;
+
+    if (!confirm(`确定要删除用户 "${userToDelete.username}" 吗？\n\n系统将先导出该用户数据作为备份，然后执行删除操作。`)) return;
 
     try {
-      await deleteUser(userId);
-      setMessage('用户已删除');
-      loadUsers();
+      await handleExportUser(userToDelete);
+      
+      setTimeout(async () => {
+        try {
+          await deleteUser(userId);
+          setMessage(`用户 "${userToDelete.username}" 已删除，数据已备份`);
+          loadUsers();
+        } catch (error) {
+          setMessage('删除失败');
+        }
+      }, 500);
     } catch (error) {
-      setMessage('删除失败');
+      console.error('Failed to export user data before delete:', error);
+      if (confirm('导出备份失败，是否仍要删除该用户？')) {
+        try {
+          await deleteUser(userId);
+          setMessage(`用户 "${userToDelete.username}" 已删除（未备份）`);
+          loadUsers();
+        } catch (error) {
+          setMessage('删除失败');
+        }
+      }
     }
   };
 
@@ -187,7 +210,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `user_${user.username}_data_${getExportDate()}.json`;
+      a.download = `sudong_user_${user.username}_data_${getExportDate()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -203,20 +226,70 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
 
   const handleExportAll = async () => {
     try {
-      const data = await exportDatabase();
+      const data = await exportAllDatabase();
       const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `all_users_data_${getExportDate()}.json`;
+      a.download = `sudong_all_users_data_${getExportDate()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setMessage('已导出所有用户数据');
+      setMessage('已导出数据库');
     } catch (error) {
-      console.error('Failed to export all data:', error);
+      console.error('Failed to export database:', error);
       setMessage('导出失败');
+    }
+  };
+
+  const handleImportDatabase = async (file: File) => {
+    try {
+      const text = await file.text();
+      await importDatabase(text);
+      setMessage('数据库导入成功，请刷新页面');
+      setShowImportModal(false);
+      loadUsers();
+    } catch (error) {
+      console.error('Failed to import database:', error);
+      setMessage('导入失败');
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (!confirm('警告：此操作将清空所有数据库数据！\n\n系统将先自动导出当前数据库备份，然后清空所有数据。\n\n确定继续吗？')) {
+      return;
+    }
+
+    try {
+      await handleExportAll();
+      
+      setTimeout(async () => {
+        try {
+          const emptyData = JSON.stringify({
+            users: [],
+            bot_settings: [],
+            chat_history: [],
+            messages: [],
+            todos: [],
+            admin_users: [{
+              id: 'admin',
+              username: 'admin',
+              password: 'admin123',
+              createdAt: new Date().toISOString()
+            }]
+          });
+          await importDatabase(emptyData);
+          setMessage('数据库已清空并初始化');
+          loadUsers();
+        } catch (error) {
+          console.error('Failed to clear database:', error);
+          setMessage('清空失败');
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to backup before clearing:', error);
+      setMessage('备份失败，已取消清空操作');
     }
   };
 
@@ -236,8 +309,8 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">管理员面板</h2>
-            <p className="text-sm text-gray-500">管理所有用户和系统设置</p>
+            <h2 className="text-xl font-bold text-gray-800">{t('adminPanel')}</h2>
+            <p className="text-sm text-gray-500">{t('manageAllUsersAndSettings')}</p>
           </div>
           <div className="flex items-center space-x-3">
             <button
@@ -245,14 +318,28 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
               className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               <Lock className="w-4 h-4" />
-              <span className="text-sm">修改密码</span>
+              <span className="text-sm">{t('changePassword')}</span>
             </button>
             <button
               onClick={handleExportAll}
               className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
               <Download className="w-4 h-4" />
-              <span className="text-sm">导出全部数据</span>
+              <span className="text-sm">{t('exportDatabase')}</span>
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="text-sm">{t('importDatabase')}</span>
+            </button>
+            <button
+              onClick={handleClearDatabase}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              <Database className="w-4 h-4" />
+              <span className="text-sm">{t('clearDatabase')}</span>
             </button>
             <button
               onClick={onClose}
@@ -266,20 +353,20 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           {message && (
             <div className={`mb-4 px-4 py-2 rounded-lg text-sm ${
-              message.includes('成功') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+              message.includes(t('success')) ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
             }`}>
               {message}
             </div>
           )}
 
           <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-gray-500">共 {users.length} 个用户</p>
+            <p className="text-sm text-gray-500">{t('totalUsers', { count: users.length })}</p>
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center space-x-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span className="text-sm">添加用户</span>
+              <span className="text-sm">{t('addUser')}</span>
             </button>
           </div>
 
@@ -303,10 +390,10 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                       <p className="text-sm text-gray-500">{user.email}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         {!user.isActive && (
-                          <span className="text-xs px-2 py-0.5 bg-red-100 text-red-600 rounded-full">已停用</span>
+                          <span className="text-xs px-2 py-0.5 bg-red-100 text-red-600 rounded-full">{t('deactivated')}</span>
                         )}
                         {user.isBanned && (
-                          <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full">已禁言</span>
+                          <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full">{t('banned')}</span>
                         )}
                       </div>
                     </div>
@@ -316,14 +403,14 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                     <button
                       onClick={() => openExportModal(user)}
                       className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="导出用户数据"
+                      title={t('exportUserData')}
                     >
                       <Download className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => openEditModal(user)}
                       className="p-2 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
-                      title="编辑"
+                      title={t('edit')}
                     >
                       <Edit3 className="w-5 h-5" />
                     </button>
@@ -334,7 +421,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                           ? 'text-gray-400 hover:text-red-500 hover:bg-red-50' 
                           : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
                       }`}
-                      title={user.isActive ? '停用' : '启用'}
+                      title={user.isActive ? t('deactivate') : t('activate')}
                     >
                       {user.isActive ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
                     </button>
@@ -345,14 +432,14 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                           ? 'text-orange-500 hover:bg-orange-50' 
                           : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'
                       }`}
-                      title={user.isBanned ? '解除禁言' : '禁言'}
+                      title={user.isBanned ? t('unban') : t('ban')}
                     >
                       <Lock className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user.id)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="删除"
+                      title={t('delete')}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -374,11 +461,11 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
               <div className="p-4 border-b border-gray-100">
-                <h3 className="font-medium text-gray-800">添加新用户</h3>
+                <h3 className="font-medium text-gray-800">{t('addNewUser')}</h3>
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('username')}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -390,7 +477,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -402,7 +489,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('password')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -423,13 +510,13 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   }}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleAddUser}
                   className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  添加
+                  {t('add')}
                 </button>
               </div>
             </div>
@@ -440,11 +527,11 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
               <div className="p-4 border-b border-gray-100">
-                <h3 className="font-medium text-gray-800">编辑用户信息</h3>
+                <h3 className="font-medium text-gray-800">{t('editUserInfo')}</h3>
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('username')}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -456,7 +543,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('email')}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -468,14 +555,14 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">新密码（留空则不修改）</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('newPasswordLeaveBlank')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="password"
                       value={editFormData.password}
                       onChange={e => setEditFormData({ ...editFormData, password: e.target.value })}
-                      placeholder="留空不修改"
+                      placeholder={t('leaveBlankToKeep')}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                     />
                   </div>
@@ -490,13 +577,13 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   }}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleEditUser}
                   className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  保存
+                  {t('save')}
                 </button>
               </div>
             </div>
@@ -507,16 +594,16 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
               <div className="p-4 border-b border-gray-100">
-                <h3 className="font-medium text-gray-800">修改管理员密码</h3>
+                <h3 className="font-medium text-gray-800">{t('changeAdminPassword')}</h3>
               </div>
               {adminMessage && (
-                <div className={`px-4 py-2 ${adminMessage.includes('成功') ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                <div className={`px-4 py-2 ${adminMessage.includes(t('success')) ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                   <p className="text-sm">{adminMessage}</p>
                 </div>
               )}
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('currentPassword')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -524,12 +611,12 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                       value={adminPasswordData.currentPassword}
                       onChange={e => setAdminPasswordData({ ...adminPasswordData, currentPassword: e.target.value })}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                      placeholder="输入当前密码"
+                      placeholder={t('enterCurrentPassword')}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">新密码</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('newPassword')}</label>
                   <div className="relative">
                     <RefreshCw className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -537,12 +624,12 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                       value={adminPasswordData.newPassword}
                       onChange={e => setAdminPasswordData({ ...adminPasswordData, newPassword: e.target.value })}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                      placeholder="输入新密码"
+                      placeholder={t('enterNewPassword')}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('confirmNewPassword')}</label>
                   <div className="relative">
                     <RefreshCw className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -550,7 +637,7 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                       value={adminPasswordData.confirmPassword}
                       onChange={e => setAdminPasswordData({ ...adminPasswordData, confirmPassword: e.target.value })}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                      placeholder="再次输入新密码"
+                      placeholder={t('reEnterNewPassword')}
                     />
                   </div>
                 </div>
@@ -564,13 +651,13 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   }}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleChangeAdminPassword}
                   className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  保存
+                  {t('save')}
                 </button>
               </div>
             </div>
@@ -581,28 +668,28 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
               <div className="p-4 border-b border-gray-100">
-                <h3 className="font-medium text-gray-800">导出用户数据</h3>
+                <h3 className="font-medium text-gray-800">{t('exportUserData')}</h3>
               </div>
               <div className="p-4">
                 <p className="text-sm text-gray-600 mb-4">
-                  将导出用户 <span className="font-medium">{selectedUser.username}</span> 的所有数据，包括：
+                  {t('willExportUserData', { username: selectedUser.username })}
                 </p>
                 <ul className="text-sm text-gray-500 space-y-2 mb-4">
                   <li className="flex items-center space-x-2">
                     <Settings className="w-4 h-4" />
-                    <span>用户基本信息（密码将被隐藏）</span>
+                    <span>{t('basicInfoPasswordHidden')}</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <Settings className="w-4 h-4" />
-                    <span>聊天记录</span>
+                    <span>{t('chatHistory')}</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <Settings className="w-4 h-4" />
-                    <span>待办事项</span>
+                    <span>{t('todoItems')}</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <Settings className="w-4 h-4" />
-                    <span>机器人设置</span>
+                    <span>{t('botSettings')}</span>
                   </li>
                 </ul>
               </div>
@@ -614,13 +701,50 @@ export const AdminPanel = ({ onClose }: AdminPanelProps) => {
                   }}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={() => handleExportUser(selectedUser)}
                   className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
-                  导出
+                  {t('export')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showImportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+              <div className="p-4 border-b border-gray-100">
+                <h3 className="font-medium text-gray-800">{t('importDatabase')}</h3>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-gray-600 mb-4">
+                  {t('selectDatabaseBackupFile')}
+                </p>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleImportDatabase(file);
+                    }
+                  }}
+                  className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600"
+                />
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  {t('selectJsonBackupFile')}
+                </p>
+              </div>
+              <div className="p-4 border-t border-gray-100 flex space-x-3">
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  {t('cancel')}
                 </button>
               </div>
             </div>

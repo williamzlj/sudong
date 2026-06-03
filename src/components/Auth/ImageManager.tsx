@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Trash2, CheckSquare, Square, Image, User, Bot, MessageSquare, X, AlertTriangle, Download } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ImageInfo, getAllImagesByUserId, deleteImage, getStorageInfo } from '../../db/indexedDB';
 
 interface ImageManagerProps {
@@ -8,6 +9,7 @@ interface ImageManagerProps {
 }
 
 export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) => {
+  const { t } = useTranslation();
   const [images, setImages] = useState<ImageInfo[]>([]);
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -133,10 +135,10 @@ export const ImageManager = ({ userId, isDarkMode = false }: ImageManagerProps) 
         <div className="flex items-center justify-between">
           <div>
             <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-              存储空间使用情况
+              {t('storageUsage')}
             </p>
             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              共 {images.length} 张图片，占用 {formatSize(storageInfo.used)}
+              {t('storageInfo', { count: images.length, size: formatSize(storageInfo.used) })}
             </p>
           </div>
           <Image className={`w-8 h-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />

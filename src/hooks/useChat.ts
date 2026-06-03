@@ -1,32 +1,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Message, ChatHistory, SearchResult } from '../types';
 import { saveChatHistory, getChatHistoryByUserId, deleteChatHistory, saveMessage, getMessagesByChatId, deleteMessage as dbDeleteMessage } from '../db/indexedDB';
-
-const AUTO_SAVE_DELAY = 2000;
-
-const getMessagesHash = (msgs: Message[]): string => {
-  return JSON.stringify(msgs.map(m => ({
-    id: m.id,
-    content: m.content,
-    sender: m.sender,
-    timestamp: m.timestamp,
-    image: m.image
-  })));
-};
 
 const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-const generateTitle = (messages: Message[]): string => {
-  if (messages.length === 0) return '无标题对话';
+export const generateTitle = (messages: Message[], t: (key: string) => string): string => {
+  if (messages.length === 0) return t('noTitleChat');
   const firstUserMessage = messages.find(m => m.sender === 'user');
   if (firstUserMessage) {
     return firstUserMessage.content.length > 30
       ? firstUserMessage.content.slice(0, 30) + '...'
       : firstUserMessage.content;
   }
-  return '无标题对话';
+  return t('noTitleChat');
 };
 
 const formatTimestamp = (date: Date): string => {
@@ -41,14 +30,22 @@ const formatTimestamp = (date: Date): string => {
 };
 
 export const useChat = (userId: string | null, defaultReply: string = '收到！') => {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasUnsavedChanges = useRef(false);
   const currentChatId = useRef<string | null>(null);
   const defaultReplyRef = useRef(defaultReply);
-  const lastSavedMessagesHash = useRef<string>('');
+  const chatHistoryRef = useRef<ChatHistory[]>([]);
+  const userIdRef = useRef(userId);
+
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
+
+  useEffect(() => {
+    chatHistoryRef.current = chatHistory;
+  }, [chatHistory]);
 
   useEffect(() => {
     defaultReplyRef.current = defaultReply;
@@ -74,40 +71,8 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
     loadHistory();
   }, [userId]);
 
-  useEffect(() => {
-    if (messages.length === 0 || !userId) {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-      return;
-    }
-
-    const currentHash = getMessagesHash(messages);
-    
-    if (currentHash !== lastSavedMessagesHash.current) {
-      hasUnsavedChanges.current = true;
-      
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-
-      autoSaveTimer.current = setTimeout(() => {
-        if (hasUnsavedChanges.current) {
-          saveChat(userId);
-          lastSavedMessagesHash.current = getMessagesHash(messages);
-          hasUnsavedChanges.current = false;
-        }
-      }, AUTO_SAVE_DELAY);
-    }
-
-    return () => {
-      if (autoSaveTimer.current) {
-        clearTimeout(autoSaveTimer.current);
-      }
-    };
-  }, [messages, userId]);
-
   const sendMessage = useCallback(async (content: string, image?: string) => {
+    const uid = userIdRef.current;
     const userMessage: Message = {
       id: generateId(),
       content: content.trim(),
@@ -127,37 +92,49 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, botMessage]);
+    setMessages(prev => {
+      const newMessages = [...prev, botMessage];
+      if (uid) {
+        setTimeout(() => saveCurrentChat(uid, newMessages), 0);
+      }
+      return newMessages;
+    });
   }, []);
 
-  const saveChat = useCallback(async (uid: string) => {
-    if (messages.length === 0 || !uid) return;
+  const saveCurrentChat = useCallback(async (uid: string, msgs?: Message[]) => {
+    const messagesToSave = msgs || messages;
+    if (messagesToSave.length === 0 || !uid) return;
+
+    const chatId = currentChatId.current;
+    const chats = chatHistoryRef.current;
 
     try {
-      if (currentChatId.current) {
-        const existingChat = chatHistory.find(c => c.id === currentChatId.current);
-        if (existingChat) {
+      if (chatId) {
+        const existingChat = chats.find(c => c.id === chatId);
+        if (existingChat && currentChatId.current === chatId) {
           const updatedChat: ChatHistory = {
             ...existingChat,
-            messages: [...messages],
+            messages: [...messagesToSave],
             updatedAt: new Date(),
           };
           await saveChatHistory(updatedChat);
-          setChatHistory(prev => {
-            const updated = prev.map(c => c.id === currentChatId.current ? updatedChat : c);
-            return updated.sort((a, b) => {
-              if (a.isPinned && !b.isPinned) return -1;
-              if (!a.isPinned && b.isPinned) return 1;
-              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          if (currentChatId.current === chatId) {
+            setChatHistory(prev => {
+              const updated = prev.map(c => c.id === chatId ? updatedChat : c);
+              return updated.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              });
             });
-          });
+          }
         }
       } else {
         const newChat: ChatHistory = {
           id: generateId(),
           userId: uid,
-          title: generateTitle(messages),
-          messages: [...messages],
+          title: generateTitle(messagesToSave, t),
+          messages: [...messagesToSave],
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -175,32 +152,30 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
     } catch (error) {
       console.error('Failed to save chat:', error);
     }
-  }, [messages, chatHistory]);
+  }, [messages]);
 
   const loadChat = useCallback(async (chat: ChatHistory) => {
     try {
       const chatMessages = await getMessagesByChatId(chat.id);
       const loadedMessages = chatMessages.length > 0 ? chatMessages : chat.messages;
       setMessages(loadedMessages);
-      lastSavedMessagesHash.current = getMessagesHash(loadedMessages);
     } catch {
       setMessages(chat.messages);
-      lastSavedMessagesHash.current = getMessagesHash(chat.messages);
     }
     currentChatId.current = chat.id;
-    hasUnsavedChanges.current = false;
   }, []);
 
   const deleteChat = useCallback(async (chatId: string) => {
+    if (currentChatId.current === chatId) {
+      currentChatId.current = null;
+    }
+
     try {
       await deleteChatHistory(chatId);
       setChatHistory(prev => prev.filter(c => c.id !== chatId));
     } catch (error) {
       console.error('Failed to delete chat:', error);
       setChatHistory(prev => prev.filter(c => c.id !== chatId));
-    }
-    if (currentChatId.current === chatId) {
-      currentChatId.current = null;
     }
   }, []);
 
@@ -210,8 +185,28 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
     } catch (error) {
       console.error('Failed to delete message:', error);
     }
+
     setMessages(prev => prev.filter(m => m.id !== messageId));
-    hasUnsavedChanges.current = true;
+
+    // Also update the chat_history record so the deletion persists across reloads
+    const chatId = currentChatId.current;
+    if (chatId) {
+      const chats = chatHistoryRef.current;
+      const existingChat = chats.find(c => c.id === chatId);
+      if (existingChat && currentChatId.current === chatId) {
+        const filtered = existingChat.messages.filter(m => m.id !== messageId);
+        const updatedChat = {
+          ...existingChat,
+          messages: filtered,
+          updatedAt: new Date(),
+        };
+        saveChatHistory(updatedChat).then(() => {
+          if (currentChatId.current === chatId) {
+            setChatHistory(prevHist => prevHist.map(c => c.id === chatId ? updatedChat : c));
+          }
+        });
+      }
+    }
   }, []);
 
   const deleteAllMessages = useCallback(async () => {
@@ -229,14 +224,11 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
       console.error('Failed to delete messages:', error);
     }
     setMessages([]);
-    hasUnsavedChanges.current = true;
   }, [messages]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
     currentChatId.current = null;
-    hasUnsavedChanges.current = false;
-    lastSavedMessagesHash.current = '';
   }, []);
 
   const updateChatTitle = useCallback(async (chatId: string, title: string) => {
@@ -388,7 +380,7 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
     chatHistory,
     isTyping,
     sendMessage,
-    saveChat,
+    saveCurrentChat,
     loadChat,
     deleteChat,
     deleteMessage,
@@ -402,5 +394,6 @@ export const useChat = (userId: string | null, defaultReply: string = '收到！
     exportChatToWord,
     exportChatsToWord,
     formatTimestamp,
+    currentChatId,
   };
 };

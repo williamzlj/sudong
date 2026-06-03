@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChatHistory as ChatHistoryType } from '../types';
 import { Clock, Trash2, FolderOpen, Search, X, Edit2, FileText, Download, Calendar, Pin } from 'lucide-react';
 
@@ -16,6 +17,7 @@ interface ChatHistoryProps {
 }
 
 export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdateNote, onTogglePin, onExport, onSearch, isDarkMode = false, formatTimestamp }: ChatHistoryProps) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const itemsPerPage = 20;
 
   const filteredHistory = history.filter(chat => {
@@ -70,6 +73,36 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
     setCurrentPage(1);
   };
 
+  const handleSelectAll = () => {
+    if (selectedChatIds.length === currentPageData.length) {
+      setSelectedChatIds([]);
+    } else {
+      setSelectedChatIds(currentPageData.map(chat => chat.id));
+    }
+  };
+
+  const handleSelectChat = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedChatIds(prev => 
+      prev.includes(chatId) 
+        ? prev.filter(id => id !== chatId)
+        : [...prev, chatId]
+    );
+  };
+
+  const handleBatchDelete = () => {
+    const selectedChats = currentPageData.filter(chat => selectedChatIds.includes(chat.id));
+    if (selectedChats.length === 0) return;
+
+    const totalMessages = selectedChats.reduce((sum, chat) => sum + chat.messages.length, 0);
+    if (confirm(`${t('confirmDeleteSelected')} ${selectedChats.length} ${t('chatTitle')}${t('deleteChatTopicAndMessages')} ${totalMessages} ${t('messages')}${t('deleteSelectedMessages')}`)) {
+      selectedChatIds.forEach(chatId => {
+        onDelete(chatId);
+      });
+      setSelectedChatIds([]);
+    }
+  };
+
   const handleSaveTitle = (chatId: string) => {
     if (editingTitle.trim()) {
       onUpdateTitle(chatId, editingTitle.trim());
@@ -97,8 +130,8 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
           <FolderOpen className="w-8 h-8" />
         </div>
-        <p className="text-sm">暂无聊天记录</p>
-        <p className="text-xs mt-1">开始聊天后记录会保存在这里</p>
+        <p className="text-sm">{t('noChatsFound')}</p>
+        <p className="text-xs mt-1">{t('chatHistory')}</p>
       </div>
     );
   }
@@ -121,7 +154,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                   onSearch?.(searchQuery);
                 }
               }}
-              placeholder="搜索聊天记录..."
+              placeholder={t('searchPlaceholder')}
               className={`w-full pl-10 pr-10 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                 isDarkMode ? 'bg-gray-700 text-white placeholder-gray-500' : 'bg-gray-200 placeholder-gray-500 border border-gray-300'
               }`}
@@ -149,11 +182,25 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                 : 'bg-green-500 hover:bg-green-600 text-white'
             }`}
           >
-            搜索
+            {t('search')}
           </button>
         </div>
         
-        <div className="flex items-center space-x-2 mt-3 gap-2">
+        <div className="flex items-center space-x-2 mt-3 gap-2 flex-wrap">
+          <button
+            onClick={handleSelectAll}
+            className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${
+              isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={selectedChatIds.length === currentPageData.length && currentPageData.length > 0}
+              onChange={handleSelectAll}
+              className="w-3 h-3 rounded"
+            />
+            <span>{t('selectAll')}</span>
+          </button>
           <Calendar className={`w-4 h-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
           <div className="relative flex-shrink-0" style={{ width: '130px', minWidth: '130px', maxWidth: '170px', height: '40px' }}>
             <input
@@ -185,7 +232,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               </span>
             )}
           </div>
-          <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} inline-flex items-center h-full px-2`}>至</span>
+          <span className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} inline-flex items-center h-full px-2`}>~</span>
           <div className="relative flex-shrink-0" style={{ width: '130px', minWidth: '130px', maxWidth: '170px', height: '40px' }}>
             <input
               type="date"
@@ -230,12 +277,33 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               <X className="w-4 h-4" />
             </button>
           )}
+          {selectedChatIds.length > 0 && (
+            <div className="flex items-center space-x-2 ml-auto">
+              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                {t('selected')} {selectedChatIds.length} {t('records')}
+              </span>
+              <button
+                onClick={() => setSelectedChatIds([])}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  isDarkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-300' : 'bg-white hover:bg-gray-200 text-gray-600'
+                }`}
+              >
+                {t('cancelSelection')}
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {t('batchDeleteChats')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div className={`flex-1 overflow-y-auto ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
         {currentPageData.length === 0 ? (
           <div className={`flex flex-col items-center justify-center h-full ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            <p className="text-sm">没有找到匹配的记录</p>
+            <p className="text-sm">{t('noRecordsFound')}</p>
           </div>
         ) : (
           currentPageData.map(chat => (
@@ -243,11 +311,20 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
               key={chat.id}
               className={`p-3 cursor-pointer transition-colors border-b ${
                 isDarkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-100 hover:bg-gray-50'
-              }`}
+              } ${selectedChatIds.includes(chat.id) ? (isDarkMode ? 'bg-gray-700' : 'bg-gray-100') : ''}`}
               onClick={() => onLoad(chat)}
             >
               <div className="flex items-start justify-between mb-2 gap-2">
-                <div className="flex-1 flex items-start space-x-3" style={{ minWidth: 0 }}>
+                <div className="flex items-start space-x-3" style={{ minWidth: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedChatIds.includes(chat.id)}
+                    onChange={(e) => handleSelectChat(chat.id, e)}
+                    onClick={(e) => e.stopPropagation()}
+                    className={`w-4 h-4 rounded mt-2 flex-shrink-0 cursor-pointer ${
+                      isDarkMode ? 'accent-green-500' : 'accent-green-500'
+                    }`}
+                  />
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isDarkMode ? 'bg-gray-700' : 'bg-green-100'
                   }`}>
@@ -274,9 +351,9 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                             e.stopPropagation();
                             handleSaveTitle(chat.id);
                           }}
-                          className="px-2 text-green-500 hover:bg-green-50 rounded"
+                          className="px-3 py-1 text-green-500 hover:bg-green-50 rounded"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-3 h-3" />
                         </button>
                       </div>
                     ) : (
@@ -290,14 +367,14 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                             setEditingChatId(chat.id);
                             setEditingTitle(chat.title);
                           }}
-                          className={`transition-colors ${isDarkMode ? 'text-gray-500 hover:text-green-400' : 'text-gray-400 hover:text-green-500'}`}
+                          className={`px-3 py-1 transition-colors ${isDarkMode ? 'text-gray-500 hover:text-green-400' : 'text-gray-400 hover:text-green-500'}`}
                         >
                           <Edit2 className="w-3 h-3" />
                         </button>
                       </div>
                     )}
                     <p className="text-xs text-gray-400 mb-1">
-                      {formatTimestamp(chat.createdAt)} · {chat.messages.length} 条消息
+                      {formatTimestamp(chat.createdAt)} · {chat.messages.length} {t('messagesCount')}
                     </p>
                     {chat.note && (
                       <div className="flex items-start space-x-2 mb-1">
@@ -308,7 +385,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                       </div>
                     )}
                     <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word', maxWidth: '100%', whiteSpace: 'pre-wrap' }}>
-                      {chat.messages.length > 0 ? chat.messages[0].content.slice(0, 80) + (chat.messages[0].content.length > 80 ? '...' : '') : '空对话'}
+                      {chat.messages.length > 0 ? chat.messages[0].content.slice(0, 80) + (chat.messages[0].content.length > 80 ? '...' : '') : t('emptyChat')}
                     </p>
                   </div>
                 </div>
@@ -325,7 +402,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                           ? (isDarkMode ? 'text-red-400 hover:bg-red-900' : 'text-red-500 hover:bg-red-50')
                           : (isDarkMode ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-red-50')
                       }`}
-                      title={chat.isPinned ? '取消置顶' : '置顶'}
+                      title={chat.isPinned ? t('unpin') : t('pin')}
                     >
                       <Pin className="w-4 h-4" />
                     </button>
@@ -338,7 +415,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                       className={`p-2 rounded-full transition-colors ${
                         isDarkMode ? 'text-gray-500 hover:text-green-400 hover:bg-gray-700' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'
                       }`}
-                      title="添加备注"
+                      title={t('addNote')}
                     >
                       <FileText className="w-4 h-4" />
                     </button>
@@ -365,7 +442,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                           }}
                           className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                         >
-                          确认
+                          {t('confirm')}
                         </button>
                         <button
                           onClick={(e) => {
@@ -376,7 +453,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                             isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                           }`}
                         >
-                          取消
+                          {t('cancel')}
                         </button>
                       </div>
                     ) : (
@@ -406,7 +483,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
           isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
         }`}>
           <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            共 {filteredHistory.length} 条记录，第 {currentPage} / {totalPages} 页
+            {t('totalRecords')} {filteredHistory.length} {t('records')}，{t('page')} {currentPage} / {totalPages}
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -422,7 +499,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              上一页
+              {t('previousPage')}
             </button>
             
             <div className="flex items-center space-x-1">
@@ -469,7 +546,7 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              下一页
+              {t('nextPage')}
             </button>
           </div>
         </div>
@@ -479,13 +556,13 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`rounded-xl shadow-xl w-full max-w-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>添加备注</h3>
+              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{t('addNote')}</h3>
             </div>
             <div className="p-4">
               <textarea
                 value={noteContent}
                 onChange={e => setNoteContent(e.target.value)}
-                placeholder="输入备注信息..."
+                placeholder={t('enterNote')}
                 className={`w-full h-32 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-500 resize-none ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-500' : 'border-gray-300'
                 }`}
@@ -501,13 +578,13 @@ export const ChatHistory = ({ history, onLoad, onDelete, onUpdateTitle, onUpdate
                   isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSaveNote}
                 className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
               >
-                保存
+                {t('save')}
               </button>
             </div>
           </div>

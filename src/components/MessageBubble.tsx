@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Message } from '../types';
 import { ListTodo, Copy, Download } from 'lucide-react';
 
@@ -15,6 +16,7 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTimestamp, onConvertToTodo, isSelected = false, onToggleSelect, showSelect = false, fontSize = 16 }: MessageBubbleProps) => {
+  const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -189,7 +191,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
           {message.image && (
             <img
               src={message.image}
-              alt="图片"
+              alt={t('image')}
               className="max-w-full h-auto rounded-lg mb-2"
             />
           )}
@@ -222,7 +224,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
         >
           <p className={`text-xs mb-2 border-b px-3 py-2 ${
               isDarkMode ? 'text-gray-400 border-gray-600' : 'text-gray-500 border-gray-100'
-            }`}>长按操作</p>
+            }`}>{t('longPressActions')}</p>
           
           {message.content && (
             <>
@@ -236,7 +238,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
                 }`}
               >
                 <Copy className="w-4 h-4" />
-                <span>复制消息</span>
+                <span>{t('copyMessage')}</span>
               </button>
               <button
                 onClick={(e) => {
@@ -248,7 +250,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
                 }`}
               >
                 <Copy className="w-4 h-4" />
-                <span>复制消息(带时间)</span>
+                <span>{t('copyMessageWithTime')}</span>
               </button>
             </>
           )}
@@ -264,7 +266,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
               }`}
             >
               <Download className="w-4 h-4" />
-              <span>保存图片</span>
+              <span>{t('saveImage')}</span>
             </button>
           )}
           
@@ -278,7 +280,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
             }`}
           >
             <ListTodo className="w-4 h-4" />
-            <span>转化为待办</span>
+            <span>{t('convertToTodo')}</span>
           </button>
           <button
             onClick={(e) => {
@@ -289,7 +291,7 @@ export const MessageBubble = ({ message, onDelete, isDarkMode = false, formatTim
               isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-red-50'
             }`}
           >
-            删除消息
+            {t('deleteMessage')}
           </button>
         </div>
       )}

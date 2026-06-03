@@ -1,4 +1,5 @@
 import { useState, KeyboardEvent, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, Paperclip, Smile, X, Menu } from 'lucide-react';
 
 interface InputBoxProps {
@@ -13,6 +14,7 @@ interface InputBoxProps {
 }
 
 export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDarkMode = false, isBanned = false, onToggleSidebar, fontSize = 16 }: InputBoxProps) => {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -88,8 +90,12 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // 处理Enter键：Enter提交，Shift+Enter换行
+    // 兼容不同浏览器的key值差异
+    const isEnter = e.key === 'Enter' || e.keyCode === 13 || e.which === 13;
+    if (isEnter && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
+      e.stopPropagation();
       handleSubmit();
     }
   };
@@ -128,7 +134,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
       {selectedImage && (
         <div className="mb-2 flex items-center space-x-2">
           <div className="relative">
-            <img src={selectedImage} alt="预览" className="h-20 w-auto rounded-lg object-cover" />
+            <img src={selectedImage} alt={t('preview')} className="h-20 w-auto rounded-lg object-cover" />
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -149,7 +155,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
               className={`p-1.5 sm:p-2 rounded-full transition-colors ${
                 isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
               }`}
-              title="保存聊天记录"
+              title={t('saveChatHistory')}
             >
               <Send className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -160,7 +166,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
               className={`p-1.5 sm:p-2 rounded-full transition-colors ${
                 isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
               }`}
-              title="切换左侧面板"
+              title={t('switchSidebar')}
             >
               <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -177,7 +183,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
             className={`p-1.5 sm:p-2 rounded-full transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
             }`}
-            title="上传图片"
+            title={t('uploadImage')}
           >
             <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
@@ -187,7 +193,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
               className={`p-1.5 sm:p-2 rounded-full transition-colors ${
                 isDarkMode ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
               }`}
-              title="表情"
+              title={t('emoji')}
             >
               <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
@@ -217,7 +223,7 @@ export const InputBox = ({ onSend, onSave, hasMessages, disabled = false, isDark
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setShowEmoji(false)}
-            placeholder={isBanned ? '您已被禁言，无法发送消息' : '输入消息...'}
+            placeholder={isBanned ? t('banned') : t('messagePlaceholder')}
             disabled={disabled || isBanned}
             rows={1}
             className={`flex-1 outline-none resize-none overflow-y-auto ${

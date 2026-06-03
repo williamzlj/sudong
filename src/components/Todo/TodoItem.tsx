@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Todo, TodoStatus } from '../../types/todo';
 import { Pin, Check, Trash2, Edit3, Calendar, RotateCcw, FileText, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface TodoItemProps {
   todo: Todo;
@@ -10,9 +11,11 @@ interface TodoItemProps {
   onTogglePin: (id: string) => void;
   onCopyToPending?: (todo: Todo) => void;
   isDarkMode?: boolean;
+  currentLang?: string;
 }
 
-export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, onCopyToPending, isDarkMode = false }: TodoItemProps) => {
+export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, onCopyToPending, isDarkMode = false, currentLang = 'zh' }: TodoItemProps) => {
+  const { t } = useTranslation();
   const [showMenu, setShowMenu] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -21,10 +24,21 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
   const [editNote, setEditNote] = useState(todo.note);
   const [editDeadline, setEditDeadline] = useState(formatDate(todo.deadline));
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [isLongPress, setIsLongPress] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const currentX = useRef(0);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const getLocale = () => {
+    switch (currentLang) {
+      case 'en': return 'en-US';
+      case 'ja': return 'ja-JP';
+      case 'ko': return 'ko-KR';
+      default: return 'zh-CN';
+    }
+  };
 
   function formatDate(date: Date): string {
     const d = new Date(date);
@@ -33,7 +47,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
 
   function formatDateTime(date: Date): string {
     const d = new Date(date);
-    return d.toLocaleString('zh-CN', {
+    return d.toLocaleString(getLocale(), {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -41,24 +55,43 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
     });
   }
 
-  const handleMouseDown = () => {
-    longPressTimer.current = setTimeout(() => {
-      if (slideRef.current) {
-        const rect = slideRef.current.getBoundingClientRect();
-        setMenuPosition({
-          x: rect.right - 100,
-          y: rect.top + 10,
-        });
-        setShowMenu(true);
-      }
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // 兼容不同浏览器的鼠标位置获取
+    const x = e.clientX || e.pageX;
+    const y = e.clientY || e.pageY;
+    setMenuPosition({ x, y });
+    
+    longPressTimer.current = window.setTimeout(() => {
+      setIsLongPress(true);
+      setShowMenu(true);
     }, 500);
   };
 
   const handleMouseUp = () => {
     if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   };
+
+  const handleMouseLeave = () => {
+    handleMouseUp();
+  };
+
+  const handleClickOutside = useCallback((event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setShowMenu(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showMenu, handleClickOutside]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
@@ -131,18 +164,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
   };
 
   const getTargetStatusLabel = () => {
-    return todo.status === 'completed' ? '未完成' : '已完成';
-  };
-
-  const getStatusBadge = () => {
-    switch (todo.status) {
-      case 'completed':
-        return <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded-full">已完成</span>;
-      case 'reference':
-        return <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">参考</span>;
-      default:
-        return null;
-    }
+    return todo.status === 'completed' ? t('pending') : t('completed');
   };
 
   const getMenuButtons = () => {
@@ -159,7 +181,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-green-600"
             >
               <Check className="w-4 h-4" />
-              <span>改为完成</span>
+              <span>{t('markAsCompleted')}</span>
             </button>
             <button
               onClick={(e) => {
@@ -170,7 +192,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-blue-600"
             >
               <FileText className="w-4 h-4" />
-              <span>改为参考</span>
+              <span>{t('markAsReference')}</span>
             </button>
           </>
         );
@@ -186,7 +208,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-orange-600"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>改为未完成</span>
+              <span>{t('markAsPending')}</span>
             </button>
             <button
               onClick={(e) => {
@@ -197,7 +219,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-blue-600"
             >
               <FileText className="w-4 h-4" />
-              <span>改为参考</span>
+              <span>{t('markAsReference')}</span>
             </button>
           </>
         );
@@ -213,7 +235,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-orange-600"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>改为未完成</span>
+              <span>{t('markAsPending')}</span>
             </button>
             <button
               onClick={(e) => {
@@ -224,7 +246,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-green-600"
             >
               <Check className="w-4 h-4" />
-              <span>改为完成</span>
+              <span>{t('markAsCompleted')}</span>
             </button>
             <button
               onClick={(e) => {
@@ -235,7 +257,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
               className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-gray-50 text-purple-600"
             >
               <Copy className="w-4 h-4" />
-              <span>复制到待办</span>
+              <span>{t('copyToPending')}</span>
             </button>
           </>
         );
@@ -252,7 +274,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
           >
             <div className="flex flex-col items-center">
               <Check className="w-6 h-6 text-white" />
-              <span className="text-xs text-white mt-1">完成</span>
+              <span className="text-xs text-white mt-1">{t('complete')}</span>
             </div>
           </div>
         )}
@@ -266,13 +288,15 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
           } ${isDarkMode ? 'bg-gray-700 border-gray-600' : ''}`}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={() => {
-            setShowMenu(false);
-            if (slideRef.current) slideRef.current.style.transform = 'translateX(0)';
+            if (!isLongPress) {
+              if (slideRef.current) slideRef.current.style.transform = 'translateX(0)';
+            }
+            setIsLongPress(false);
           }}
         >
           <div className="flex items-start justify-between gap-2">
@@ -312,7 +336,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                       onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
                       className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm"
                     >
-                      保存
+                      {t('save')}
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleCancel(); }}
@@ -320,7 +344,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                         isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                       }`}
                     >
-                      取消
+                      {t('cancel')}
                     </button>
                   </div>
                 </div>
@@ -330,7 +354,6 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                     {todo.isPinned && (
                       <Pin className="w-4 h-4 text-red-500 flex-shrink-0" />
                     )}
-                    {getStatusBadge()}
                     <h3 className={`font-medium flex-1 min-w-0 ${
                       todo.status === 'completed' ? 'text-gray-400 line-through' : isDarkMode ? 'text-gray-200' : 'text-gray-800'
                     }`}>
@@ -363,14 +386,14 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                     className={`p-2 rounded-lg transition-colors ${
                       todo.isPinned ? 'text-red-500 bg-red-50' : `text-gray-400 hover:text-red-500 hover:bg-red-50 ${isDarkMode ? 'hover:bg-red-900' : ''}`
                     }`}
-                    title={todo.isPinned ? '取消置顶' : '置顶'}
+                    title={todo.isPinned ? t('unpin') : t('pin')}
                   >
                     <Pin className="w-4 h-4" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowEdit(true); }}
                     className={`p-2 rounded-lg transition-colors text-gray-400 hover:text-green-500 hover:bg-green-50 ${isDarkMode ? 'hover:bg-green-900' : ''}`}
-                    title="编辑"
+                    title={t('edit')}
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
@@ -386,7 +409,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                             : 'bg-green-500 hover:bg-green-600'
                         }`}
                       >
-                        确认
+                        {t('confirm')}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmStatus(null); }}
@@ -394,7 +417,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                           isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         }`}
                       >
-                        取消
+                        {t('cancel')}
                       </button>
                     </div>
                   ) : (
@@ -405,7 +428,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                           ? `text-gray-400 hover:text-orange-500 hover:bg-orange-50 ${isDarkMode ? 'hover:bg-orange-900' : ''}` 
                           : `text-gray-400 hover:text-green-500 hover:bg-green-50 ${isDarkMode ? 'hover:bg-green-900' : ''}`
                       }`}
-                      title={todo.status === 'completed' ? '标记为未完成' : '标记为已完成'}
+                      title={todo.status === 'completed' ? t('markAsPending') : t('markAsCompleted')}
                     >
                       <Check className="w-4 h-4" />
                     </button>
@@ -416,7 +439,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                         onClick={(e) => { e.stopPropagation(); handleDelete(todo.id); }}
                         className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                       >
-                        确认
+                        {t('confirm')}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
@@ -424,14 +447,14 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
                           isDarkMode ? 'bg-gray-600 text-gray-300 hover:bg-gray-500' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         }`}
                       >
-                        取消
+                        {t('cancel')}
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDelete(todo.id); }}
                       className={`p-2 rounded-lg transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 ${isDarkMode ? 'hover:bg-red-900' : ''}`}
-                      title="删除"
+                      title={t('delete')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -445,11 +468,11 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
 
       {showMenu && (
         <div
+          ref={menuRef}
           className="fixed rounded-lg shadow-xl border p-2 z-50 min-w-[140px] bg-white border-gray-200"
           style={{ left: menuPosition.x, top: menuPosition.y }}
-          onClick={handleCloseMenu}
         >
-          <p className="text-xs mb-2 border-b px-3 py-2 text-gray-500 border-gray-100">长按操作</p>
+          <p className="text-xs mb-2 border-b px-3 py-2 text-gray-500 border-gray-100">{t('longPressActions')}</p>
           {getMenuButtons()}
           <button
             onClick={(e) => {
@@ -459,7 +482,7 @@ export const TodoItem = ({ todo, onSetStatus, onDelete, onUpdate, onTogglePin, o
             }}
             className="w-full text-red-500 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-red-50 mt-2"
           >
-            删除
+            {t('delete')}
           </button>
         </div>
       )}

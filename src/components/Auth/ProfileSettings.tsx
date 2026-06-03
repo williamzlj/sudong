@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User as UserType, BotSettings } from '../../types/auth';
 import { Eye, EyeOff, UserIcon, Lock, Mail, Save, LogOut, X, Camera, Bot, Edit3, MessageSquare, Minus, Plus } from 'lucide-react';
 import { ImageManager } from './ImageManager';
@@ -18,19 +19,28 @@ const avatarColors = [
 ];
 
 const userNameColors = [
-  { name: '蓝色', value: 'text-blue-500', color: '#3b82f6' },
-  { name: '绿色', value: 'text-green-500', color: '#22c55e' },
-  { name: '紫色', value: 'text-purple-500', color: '#a855f7' },
-  { name: '橙色', value: 'text-orange-500', color: '#f97316' },
-  { name: '粉色', value: 'text-pink-500', color: '#ec4899' },
-  { name: '红色', value: 'text-red-500', color: '#ef4444' },
-  { name: '青色', value: 'text-cyan-500', color: '#06b6d4' },
-  { name: '靛蓝', value: 'text-indigo-500', color: '#6366f1' },
-  { name: '黑色', value: 'text-black', color: '#000000' },
-  { name: '深灰色', value: 'text-gray-600', color: '#4b5563' },
+  { name: 'blue', value: 'text-blue-500', color: '#3b82f6' },
+  { name: 'green', value: 'text-green-500', color: '#22c55e' },
+  { name: 'purple', value: 'text-purple-500', color: '#a855f7' },
+  { name: 'orange', value: 'text-orange-500', color: '#f97316' },
+  { name: 'pink', value: 'text-pink-500', color: '#ec4899' },
+  { name: 'red', value: 'text-red-500', color: '#ef4444' },
+  { name: 'cyan', value: 'text-cyan-500', color: '#06b6d4' },
+  { name: 'indigo', value: 'text-indigo-500', color: '#6366f1' },
+  { name: 'black', value: 'text-black', color: '#000000' },
+  { name: 'darkGray', value: 'text-gray-600', color: '#4b5563' },
 ];
 
+const colorNames: Record<string, Record<string, string>> = {
+  zh: { blue: '蓝色', green: '绿色', purple: '紫色', orange: '橙色', pink: '粉色', red: '红色', cyan: '青色', indigo: '靛蓝', black: '黑色', darkGray: '深灰色' },
+  en: { blue: 'Blue', green: 'Green', purple: 'Purple', orange: 'Orange', pink: 'Pink', red: 'Red', cyan: 'Cyan', indigo: 'Indigo', black: 'Black', darkGray: 'Dark Gray' },
+  ja: { blue: '青', green: '緑', purple: '紫', orange: 'オレンジ', pink: 'ピンク', red: '赤', cyan: 'シアン', indigo: '藍', black: '黒', darkGray: '濃い灰色' },
+  ko: { blue: '파랑', green: '초록', purple: '보라', orange: '주황', pink: '분홍', red: '빨강', cyan: '청록', indigo: '남색', black: '검정', darkGray: '짙은 회색' },
+};
+
 export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLogout, onClose }: ProfileSettingsProps) => {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language || 'zh';
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -211,8 +221,8 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">设置</h2>
-            <p className="text-sm text-gray-500">管理你的账户和机器人设置</p>
+            <h2 className="text-xl font-bold text-gray-800">{t('settings')}</h2>
+            <p className="text-sm text-gray-500">{t('manageAccount')}</p>
           </div>
           <button
             onClick={onClose}
@@ -229,7 +239,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               activeTab === 'profile' ? 'text-green-600 border-b-2 border-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            账户设置
+            {t('accountSettings')}
           </button>
           <button
             onClick={() => setActiveTab('bot')}
@@ -237,7 +247,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               activeTab === 'bot' ? 'text-green-600 border-b-2 border-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            机器人设置
+            {t('botSettings')}
           </button>
           <button
             onClick={() => setActiveTab('images')}
@@ -245,7 +255,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               activeTab === 'images' ? 'text-green-600 border-b-2 border-green-600 bg-green-50' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            图片管理
+            {t('imageManager')}
           </button>
         </div>
 
@@ -276,7 +286,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                     className="hidden"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">点击更换头像</p>
+                <p className="text-xs text-gray-500 mt-2">{t('clickToChangeAvatar')}</p>
                 
                 <div className="flex space-x-2 mt-3">
                   {avatarColors.map(color => (
@@ -293,7 +303,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('username')}</label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -307,7 +317,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">用户名颜色</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('userNameColor')}</label>
                 <div className="flex flex-wrap gap-2">
                   {userNameColors.map((color) => (
                     <button
@@ -325,14 +335,14 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: color.color }}
                       />
-                      <span>{color.name}</span>
+                      <span>{colorNames[currentLang][color.name] || color.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('email')}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -346,54 +356,54 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               </div>
 
               <button
-                onClick={handleSaveProfile}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isLoading ? '保存中...' : '保存个人资料'}</span>
-              </button>
+            onClick={handleSaveProfile}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          >
+            <Save className="w-4 h-4" />
+            <span>{isLoading ? t('loading') : t('saveProfile')}</span>
+          </button>
 
               <div className="border-t border-gray-100 pt-5">
-                <p className="text-sm font-medium text-gray-700 mb-4">修改密码</p>
+                <p className="text-sm font-medium text-gray-700 mb-4">{t('changePassword')}</p>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">当前密码</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">{t('password')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={e => setCurrentPassword(e.target.value)}
-                      placeholder="请输入当前密码"
+                      placeholder={t('enterCurrentPassword')}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">新密码</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">{t('newPassword')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      placeholder="新密码（至少6位）"
+                      placeholder={t('newPasswordMinLength')}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">确认新密码</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">{t('confirmPassword')}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      placeholder="再次输入新密码"
+                      placeholder={t('reEnterNewPassword')}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
                     />
                     <button
@@ -412,7 +422,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                   className="w-full mt-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isLoading ? '修改中...' : '修改密码'}</span>
+                  <span>{isLoading ? t('loading') : t('changePassword')}</span>
                 </button>
               </div>
 
@@ -433,7 +443,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                 className="w-full bg-gray-100 text-red-600 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2"
               >
                 <LogOut className="w-4 h-4" />
-                <span>退出登录</span>
+                <span>{t('logout')}</span>
               </button>
             </div>
           ) : activeTab === 'bot' ? (
@@ -462,7 +472,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                     className="hidden"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">点击更换机器人头像</p>
+                <p className="text-xs text-gray-500 mt-2">{t('clickToChangeBotAvatar')}</p>
                 
                 <div className="flex space-x-2 mt-3">
                   {avatarColors.map(color => (
@@ -479,7 +489,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">机器人名称</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('botName')}</label>
                 <div className="relative">
                   <Edit3 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -487,13 +497,13 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                     value={botName}
                     onChange={e => setBotName(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                    placeholder="输入机器人名称"
+                    placeholder={t('botName')}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">机器人默认回复</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('defaultReply')}</label>
                 <div className="relative">
                   <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -501,16 +511,16 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                     value={botDefaultReply}
                     onChange={e => setBotDefaultReply(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                    placeholder="输入机器人默认回复"
+                    placeholder={t('defaultReply')}
                   />
                 </div>
               </div>
 
               <div className="border-t border-gray-100 pt-5">
-                <p className="text-sm font-medium text-gray-700 mb-4">产品设置</p>
+                <p className="text-sm font-medium text-gray-700 mb-4">{t('productSettings')}</p>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">产品名称</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('productName')}</label>
                   <div className="relative">
                     <Edit3 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -518,13 +528,13 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                       value={productName}
                       onChange={e => setProductName(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                      placeholder="输入产品名称"
+                      placeholder={t('productName')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">产品介绍</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('productDescription')}</label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -532,13 +542,13 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                       value={productDescription}
                       onChange={e => setProductDescription(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                      placeholder="输入产品介绍"
+                      placeholder={t('productDescription')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">聊天提示</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('chatHint')}</label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -546,13 +556,13 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                       value={chatHint}
                       onChange={e => setChatHint(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                      placeholder="输入聊天提示"
+                      placeholder={t('chatHint')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">聊天背景文字</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('chatBackgroundText')}</label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -560,13 +570,13 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                       value={chatBackgroundText}
                       onChange={e => setChatBackgroundText(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                      placeholder="输入聊天背景文字"
+                      placeholder={t('chatBackgroundText')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">字体大小</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('fontSize')}</label>
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setFontSize(Math.max(12, fontSize - 1))}
@@ -584,7 +594,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                       <Plus className="w-5 h-5 text-gray-600" />
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">范围：12px - 32px</p>
+                  <p className="text-xs text-gray-500 mt-2">{t('range')}：12px - 32px</p>
                 </div>
               </div>
 
@@ -599,7 +609,7 @@ export const ProfileSettings = ({ user, botSettings, onUpdate, onUpdateBot, onLo
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center space-x-2"
               >
                 <Save className="w-4 h-4" />
-                <span>保存机器人设置</span>
+                <span>{t('saveBotSettings')}</span>
               </button>
             </div>
           ) : activeTab === 'images' ? (

@@ -1,6 +1,8 @@
-import { TreePine, History, Plus, Settings, Moon, Sun, Info, User, ListTodo, Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { TreePine, History, Plus, Settings, Moon, Sun, Info, User, ListTodo, Shield, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { User as UserType, BotSettings } from '../types/auth';
+import { LanguageSelector } from './LanguageSelector';
 
 interface SidebarProps {
   activeTab: 'chat' | 'history' | 'todo';
@@ -15,6 +17,7 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onOpenAdmin, user, botSettings, isDarkMode, onToggleDarkMode }: SidebarProps) => {
+  const { t } = useTranslation();
   const [showInfo, setShowInfo] = useState(false);
 
   return (
@@ -27,8 +30,8 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             <TreePine className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{botSettings.productName || '树洞'}</h1>
-            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>{botSettings.productDescription || '倾诉你的心声'}</p>
+            <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{botSettings.productName || t('welcome')}</h1>
+            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>{botSettings.productDescription || t('chatHint')}</p>
           </div>
         </div>
       </div>
@@ -39,7 +42,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
         >
           <Plus className="w-5 h-5" />
-          <span className="font-medium">新的聊天</span>
+          <span className="font-medium">{t('newChat')}</span>
         </button>
       </div>
 
@@ -54,7 +57,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             }`}
           >
             <TreePine className="w-8 h-8" />
-            <span className="text-sm font-medium mt-2">聊天</span>
+            <span className="text-sm font-medium mt-2">{t('chat')}</span>
           </button>
           <button
             onClick={() => onTabChange('history')}
@@ -65,7 +68,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             }`}
           >
             <History className="w-8 h-8" />
-            <span className="text-sm font-medium mt-2">记录</span>
+            <span className="text-sm font-medium mt-2">{t('history')}</span>
           </button>
           <button
             onClick={() => onTabChange('todo')}
@@ -76,7 +79,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             }`}
           >
             <ListTodo className="w-8 h-8" />
-            <span className="text-sm font-medium mt-2">待办</span>
+            <span className="text-sm font-medium mt-2">{t('todo')}</span>
           </button>
         </div>
       </div>
@@ -99,13 +102,19 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             <p className="text-xs text-gray-400 truncate">{user.email}</p>
           </div>
         </div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-1">
+            <Globe className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+          </div>
+          <LanguageSelector isDarkMode={isDarkMode} />
+        </div>
         <div className="flex items-center justify-between">
           <button
             onClick={() => setShowInfo(!showInfo)}
             className={`p-2 rounded-lg transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
-            title="关于"
+            title={t('about')}
           >
             <Info className="w-5 h-5" />
           </button>
@@ -114,7 +123,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             className={`p-2 rounded-lg transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
-            title={isDarkMode ? '切换到亮色模式' : '切换到暗色模式'}
+            title={isDarkMode ? t('switchToLightMode') : t('switchToDarkMode')}
           >
             {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
@@ -123,7 +132,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             className={`p-2 rounded-lg transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
-            title="设置"
+            title={t('settings')}
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -132,7 +141,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
             className={`p-2 rounded-lg transition-colors ${
               isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             }`}
-            title="管理员"
+            title={t('admin')}
           >
             <Shield className="w-5 h-5" />
           </button>
@@ -140,7 +149,7 @@ export const Sidebar = ({ activeTab, onTabChange, onNewChat, onOpenSettings, onO
         {showInfo && (
           <div className={`mt-3 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
             <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              树洞是一个安全的匿名聊天空间，您可以放心倾诉心事。你的隐私很安全，我们不会储存你的密码和聊天信息，所有聊天记录仅保存在本地浏览器管理的IndexedDB数据库中，服务器端不保存用户的任何数据。请及时导出和保存数据！使用时请关闭无痕浏览模式，清空浏览器缓存时会清空数据库！数据丢失后无法恢复！请不要用来做重要的事项的记录！<br></br>本软件由张亮军开发（张亮数理化 无锡·海岸城）。2026.5
+              {t('aboutText')}
             </p>
           </div>
         )}

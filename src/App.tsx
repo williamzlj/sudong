@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
 import { Sidebar } from './components/Sidebar';
 import { MessageList } from './components/MessageList';
 import { InputBox } from './components/InputBox';
@@ -8,16 +10,18 @@ import { Login } from './components/Auth/Login';
 import { Register } from './components/Auth/Register';
 import { ProfileSettings } from './components/Auth/ProfileSettings';
 import { AdminPanel } from './components/Admin/AdminPanel';
+import { LanguageSelector } from './components/LanguageSelector';
 import { useChat } from './hooks/useChat';
 import { useAuth } from './hooks/useAuth';
 import { useTodo } from './hooks/useTodo';
 import { ChatHistory as ChatHistoryType } from './types';
-import { ArrowLeft, Check, Download, FileText, Shield, Trash2, ListChecks, ChevronUp, ChevronDown, Menu, X, Copy } from 'lucide-react';
+import { ArrowLeft, Check, Download, FileText, Shield, Trash2, ListChecks, ChevronUp, ChevronDown, Menu, X, Copy, Globe } from 'lucide-react';
 import { exportDatabase, importDatabase } from './db/indexedDB';
 
 type AuthMode = 'login' | 'register';
 
 export default function App() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'chat' | 'history' | 'todo'>('chat');
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [isFromHistory, setIsFromHistory] = useState(false);
@@ -41,6 +45,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [showScrollTopButton, setShowScrollTopButton] = useState(false);
   const [showScrollBottomButton, setShowScrollBottomButton] = useState(false);
+  const [currentChatTitle, setCurrentChatTitle] = useState('');
 
   useEffect(() => {
     const checkMobile = () => {
@@ -75,6 +80,7 @@ export default function App() {
     exportChatToWord,
     exportChatsToWord,
     formatTimestamp,
+    currentChatId,
   } = useChat(user?.id || null, botSettings.defaultReply);
 
   useEffect(() => {
@@ -184,6 +190,7 @@ export default function App() {
     setActiveTab('chat');
     setIsFromHistory(true);
     setShowSearchResults(false);
+    setCurrentChatTitle(chat.title);
     if (isMobile) {
       setSidebarVisible(false);
     }
@@ -191,10 +198,12 @@ export default function App() {
 
   const handleExportChat = (chat: ChatHistoryType) => {
     const content = exportChatToWord(chat);
-    downloadFile(content, `${chat.title}_${getExportDate()}.txt`, 'text/plain');
+    const username = user?.username || 'user';
+    downloadFile(content, `sudong_${username}_${chat.title}_${getExportDate()}.txt`, 'text/plain');
   };
 
   const handleExportAll = () => {
+    const username = user?.username || 'user';
     let chatsToExport = chatHistory;
     
     if (exportStartDate || exportEndDate) {
@@ -210,8 +219,8 @@ export default function App() {
 
     const content = exportChatsToWord(chatsToExport);
     const filename = exportStartDate || exportEndDate 
-      ? `聊天记录_${exportStartDate || '最早'}_${exportEndDate || '最晚'}_${getExportDate()}.txt`
-      : `聊天记录汇总_${getExportDate()}.txt`;
+      ? `sudong_${username}_聊天记录_${exportStartDate || '最早'}_${exportEndDate || '最晚'}_${getExportDate()}.txt`
+      : `sudong_${username}_聊天记录汇总_${getExportDate()}.txt`;
     downloadFile(content, filename, 'text/plain');
     setShowExportModal(false);
     setExportStartDate('');
@@ -220,12 +229,52 @@ export default function App() {
 
   const handleExportDatabase = async () => {
     try {
-      const data = await exportDatabase();
-      downloadFile(data, `tree-hole-backup_${getExportDate()}.json`, 'application/json');
+      const username = user?.username || 'user';
+      const data = await exportDatabase(user?.id || null);
+      downloadFile(data, `sudong_${username}_data_${getExportDate()}.json`, 'application/json');
       setShowExportModal(false);
     } catch (error) {
       console.error('Failed to export database:', error);
       alert('导出失败');
+    }
+  };
+
+  const handleClearChatHistory = async () => {
+    if (!confirm(t('clearChatHistoryConfirm'))) {
+      return;
+    }
+
+    try {
+      const username = user?.username || 'user';
+      const data = await exportDatabase(user?.id || null);
+      downloadFile(data, `sudong_${username}_backup_before_clear_${getExportDate()}.json`, 'application/json');
+      
+      setTimeout(async () => {
+        try {
+          for (const chat of chatHistory) {
+            await deleteChat(chat.id);
+          }
+          clearMessages();
+          alert(t('chatHistoryCleared'));
+        } catch (error) {
+          console.error('Failed to clear chat history:', error);
+          alert(t('clearFailed'));
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to backup before clearing:', error);
+      if (confirm(t('backupFailedConfirmClear'))) {
+        try {
+          for (const chat of chatHistory) {
+            await deleteChat(chat.id);
+          }
+          clearMessages();
+          alert(t('chatHistoryClearedNoBackup'));
+        } catch (error) {
+          console.error('Failed to clear chat history:', error);
+          alert(t('clearFailed'));
+        }
+      }
     }
   };
 
@@ -318,10 +367,25 @@ export default function App() {
 
   const handleDeleteSelected = () => {
     if (selectedMessages.length === 0) return;
-    if (confirm(`确定要删除选中的 ${selectedMessages.length} 条消息吗？`)) {
-      selectedMessages.forEach(id => deleteMessage(id));
-      setSelectedMessages([]);
-      setShowSelectMode(false);
+    if (selectedMessages.length === messages.length) {
+      const chatId = currentChatId.current;
+      const chatTitle = chatHistory.find(c => c.id === chatId)?.title || '该聊天主题';
+      if (confirm(`确定要删除${chatTitle}及下面的 ${selectedMessages.length} 条消息吗？`)) {
+        if (chatId) {
+          deleteChat(chatId);
+        }
+        setSelectedMessages([]);
+        setShowSelectMode(false);
+        setActiveTab('history');
+        setIsFromHistory(false);
+        clearMessages();
+      }
+    } else {
+      if (confirm(`确定要删除选中的 ${selectedMessages.length} 条消息吗？`)) {
+        selectedMessages.forEach(id => deleteMessage(id));
+        setSelectedMessages([]);
+        setShowSelectMode(false);
+      }
     }
   };
 
@@ -423,11 +487,11 @@ export default function App() {
                 }
               }}
               onOpenAdmin={() => {
-                const password = prompt('请输入管理员密码：');
+                const password = prompt(t('enterAdminPassword'));
                 if (password === 'admin123') {
                   setShowAdminPanel(true);
                 } else if (password !== null) {
-                  alert('密码错误');
+                  alert(t('wrongPassword'));
                 }
               }}
               user={user!}
@@ -478,11 +542,20 @@ export default function App() {
                     </button>
                   )}
                   <div className="min-w-0">
-                    <h2 className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-                      {isFromHistory ? '已加载的记录' : `与${botSettings.name}对话`}
-                    </h2>
+                    <div className="flex items-center space-x-2 overflow-hidden">
+                      <h2 className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                        {isFromHistory ? t('loadedRecords') : t('chatWithBot', { name: botSettings.name })}
+                      </h2>
+                      {isFromHistory && currentChatTitle && (
+                        <span className={`text-xs sm:text-sm truncate px-2 py-0.5 rounded ${
+                          isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {currentChatTitle}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400 mt-0.5 hidden sm:block">
-                      {isFromHistory ? '点击返回查看更多记录' : botSettings.chatHint || '你的秘密很安全'}
+                      {isFromHistory ? t('clickToBack') : botSettings.chatHint || t('yourSecretSafe')}
                     </p>
                   </div>
                 </div>
@@ -507,7 +580,7 @@ export default function App() {
                           onChange={handleSelectAll}
                           className="w-3 h-3 sm:w-4 sm:h-4 cursor-pointer"
                         />
-                        <span className="hidden sm:inline">全选</span>
+                        <span className="hidden sm:inline">{t('selectAll')}</span>
                       </button>
                       <button
                         onClick={handleCopySelected}
@@ -519,7 +592,7 @@ export default function App() {
                         } text-white min-w-[60px] sm:min-w-[75px] justify-center`}
                       >
                         <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">复制</span>
+                        <span className="hidden sm:inline">{t('copy')}</span>
                       </button>
                       <button
                         onClick={handleDeleteSelected}
@@ -542,7 +615,7 @@ export default function App() {
                           isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
                         } text-white min-w-[60px] sm:min-w-[70px]`}
                       >
-                        取消
+                        {t('cancel')}
                       </button>
                     </div>
                   ) : (
@@ -639,8 +712,8 @@ export default function App() {
                     {sidebarVisible ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                   </button>
                   <div>
-                    <h2 className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>聊天记录</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">共 {chatHistory.length} 条记录</p>
+                    <h2 className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{t('history')}</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('totalRecords')} {chatHistory.length} {t('records')}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -651,7 +724,7 @@ export default function App() {
                     } text-white`}
                   >
                     <FileText className="w-4 h-4" />
-                    <span>导入</span>
+                    <span>{t('import')}</span>
                   </button>
                   <button
                     onClick={() => setShowExportModal(true)}
@@ -660,7 +733,16 @@ export default function App() {
                     } text-white`}
                   >
                     <Download className="w-4 h-4" />
-                    <span>导出</span>
+                    <span>{t('export')}</span>
+                  </button>
+                  <button
+                    onClick={handleClearChatHistory}
+                    className={`flex items-center space-x-1 sm:space-x-2 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                      isDarkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'
+                    } text-white`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>{t('clear')}</span>
                   </button>
                 </div>
               </div>
@@ -670,7 +752,7 @@ export default function App() {
               <div className={`flex-1 overflow-y-auto p-3 sm:p-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
                 <div className="mb-3 sm:mb-4 flex items-center justify-between">
                   <h3 className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    搜索结果 ({searchResults.length})
+                    {t('searchResults')} ({searchResults.length})
                   </h3>
                   <button
                     onClick={() => {
@@ -682,7 +764,7 @@ export default function App() {
                     }`}
                   >
                     <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">返回</span>
+                    <span className="hidden sm:inline">{t('goBack')}</span>
                   </button>
                 </div>
                   {searchResults.map((result, index) => (
@@ -705,7 +787,7 @@ export default function App() {
                         onClick={() => handleLoadFromSearch(result.chatId, result.messageId)}
                         className="mt-2 text-xs text-green-500 hover:text-green-600"
                       >
-                        定位到消息
+                        {t('locateMessage')}
                       </button>
                     </div>
                   ))}
@@ -742,6 +824,7 @@ export default function App() {
             onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
             isDarkMode={isDarkMode}
             isMobile={isMobile}
+            currentLang={i18n.language}
           />
         )}
       </div>
@@ -761,8 +844,8 @@ export default function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`rounded-xl shadow-xl w-full max-w-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>导出数据</h3>
-              <p className="text-xs text-gray-500 mt-1">选择导出方式</p>
+              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{t('exportData')}</h3>
+              <p className="text-xs text-gray-500 mt-1">{t('selectExportMethod')}</p>
             </div>
             <div className="p-4 space-y-4">
               <button
@@ -773,8 +856,8 @@ export default function App() {
               >
                 <Download className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 <div className="text-left">
-                  <p className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>导出聊天记录</p>
-                  <p className="text-xs text-gray-500">导出为文本文件</p>
+                  <p className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{t('exportChatTitle')}</p>
+                  <p className="text-xs text-gray-500">{t('exportAsText')}</p>
                 </div>
               </button>
               
@@ -786,8 +869,8 @@ export default function App() {
               >
                 <FileText className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 <div className="text-left">
-                  <p className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>导出完整数据库</p>
-                  <p className="text-xs text-gray-500">包含所有用户数据</p>
+                  <p className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{t('exportDatabaseTitle')}</p>
+                  <p className="text-xs text-gray-500">{t('containsAllData')}</p>
                 </div>
               </button>
             </div>
@@ -798,7 +881,7 @@ export default function App() {
                   isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                取消
+                {t('cancel')}
               </button>
             </div>
           </div>
@@ -809,8 +892,8 @@ export default function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className={`rounded-xl shadow-xl w-full max-w-md ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>导入数据</h3>
-              <p className="text-xs text-gray-500 mt-1">选择备份文件导入</p>
+              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{t('importTitle')}</h3>
+              <p className="text-xs text-gray-500 mt-1">{t('selectFile')}</p>
             </div>
             <div className="p-4 space-y-4">
               <input
@@ -827,7 +910,7 @@ export default function App() {
                 }`}
               />
               <p className="text-xs text-gray-500 text-center">
-                请选择 .json 格式的备份文件
+                {t('jsonFormat')}
               </p>
             </div>
             <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
@@ -837,7 +920,7 @@ export default function App() {
                   isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                取消
+                {t('cancel')}
               </button>
             </div>
           </div>

@@ -287,25 +287,21 @@ export const deleteChatHistory = async (id: string): Promise<void> => {
     const chatStore = transaction.objectStore('chat_history');
     const chatIndex = messageStore.index('chatId');
     
-    const deleteMessages = new Promise<void>((res, rej) => {
-      const request = chatIndex.openCursor(IDBKeyRange.only(id));
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBOpenDBRequest).result;
-        if (cursor) {
-          cursor.delete();
-          cursor.continue();
-        } else {
-          res();
-        }
-      };
-      request.onerror = () => rej(request.error);
-    });
-    
-    deleteMessages.then(() => {
-      chatStore.delete(id);
-    }).catch((error) => {
-      console.error('Failed to delete messages:', error);
-    });
+    // Delete all messages with this chatId first
+    const cursorRequest = chatIndex.openCursor(IDBKeyRange.only(id));
+    cursorRequest.onsuccess = (event) => {
+      const cursor = (event.target as IDBOpenDBRequest).result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      } else {
+        // All messages deleted, now synchronously delete the chat history record
+        chatStore.delete(id);
+      }
+    };
+    cursorRequest.onerror = () => {
+      reject(cursorRequest.error);
+    };
     
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
@@ -568,7 +564,63 @@ export const authenticateAdmin = async (username: string, password: string): Pro
   });
 };
 
-export const exportDatabase = async (): Promise<string> => {
+export const exportDatabase = async (userId?: string): Promise<string> => {
+  const database = getDB();
+  const data: Record<string, any[]> = {};
+  
+  if (userId) {
+    const userData = await new Promise<any>((resolve) => {
+      const transaction = database.transaction(['users'], 'readonly');
+      const store = transaction.objectStore('users');
+      const request = store.get(userId);
+      request.onsuccess = () => resolve(request.result || null);
+    });
+    
+    data['users'] = userData ? [{
+      id: userData.id,
+      username: userData.username,
+      email: userData.email,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt
+    }] : [];
+    
+    data['bot_settings'] = await new Promise((resolve) => {
+      const transaction = database.transaction(['bot_settings'], 'readonly');
+      const store = transaction.objectStore('bot_settings');
+      const request = store.get(userId);
+      request.onsuccess = () => resolve(request.result ? [request.result] : []);
+    });
+    
+    const chatHistory = await getChatHistoryByUserId(userId);
+    data['chat_history'] = chatHistory;
+    
+    const messages: any[] = [];
+    for (const chat of chatHistory) {
+      const chatMessages = await getMessagesByChatId(chat.id);
+      messages.push(...chatMessages);
+    }
+    data['messages'] = messages;
+    
+    data['todos'] = await getTodosByUserId(userId);
+    
+    data['admin_users'] = [];
+  } else {
+    const stores = ['users', 'bot_settings', 'chat_history', 'messages', 'todos', 'admin_users'];
+    
+    for (const storeName of stores) {
+      data[storeName] = await new Promise((resolve) => {
+        const transaction = database.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+      });
+    }
+  }
+  
+  return JSON.stringify(data, null, 2);
+};
+
+export const exportAllDatabase = async (): Promise<string> => {
   const database = getDB();
   const data: Record<string, any[]> = {};
   
@@ -586,25 +638,115 @@ export const exportDatabase = async (): Promise<string> => {
   return JSON.stringify(data, null, 2);
 };
 
-export const importDatabase = async (jsonData: string): Promise<void> => {
+export const importDatabase = async (jsonData: string, targetEmail?: string): Promise<void> => {
   const database = getDB();
   const data = JSON.parse(jsonData);
   
-  const stores = ['users', 'bot_settings', 'chat_history', 'messages', 'todos', 'admin_users'];
-  
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(stores, 'readwrite');
+    if (!data['users'] || data['users'].length === 0) {
+      reject(new Error('导入数据中没有用户信息'));
+      return;
+    }
     
-    stores.forEach(storeName => {
-      const store = transaction.objectStore(storeName);
-      store.clear();
+    const sourceUser = data['users'][0];
+    const sourceUserId = sourceUser.id;
+    const sourceEmail = sourceUser.email || targetEmail;
+    
+    if (!sourceEmail) {
+      reject(new Error('无法确定用户标识（邮箱）'));
+      return;
+    }
+    
+    const transaction = database.transaction(['users', 'bot_settings', 'chat_history', 'messages', 'todos'], 'readwrite');
+    
+    const usersStore = transaction.objectStore('users');
+    const botSettingsStore = transaction.objectStore('bot_settings');
+    const chatHistoryStore = transaction.objectStore('chat_history');
+    const messagesStore = transaction.objectStore('messages');
+    const todosStore = transaction.objectStore('todos');
+    
+    let targetUserId: string;
+    
+    const getExistingUserRequest = usersStore.index('email').get(sourceEmail);
+    
+    getExistingUserRequest.onsuccess = () => {
+      const existingUser = getExistingUserRequest.result;
       
-      if (data[storeName] && data[storeName].length > 0) {
-        data[storeName].forEach((item: any) => {
-          store.put(item);
-        });
+      if (existingUser) {
+        targetUserId = existingUser.id;
+      } else {
+        targetUserId = Date.now().toString();
+        const newUser = {
+          id: targetUserId,
+          username: sourceUser.username,
+          email: sourceEmail,
+          password: '',
+          avatar: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        usersStore.put(newUser);
       }
-    });
+      
+      const idMap: Record<string, string> = {};
+      idMap[sourceUserId] = targetUserId;
+      
+      if (data['bot_settings'] && data['bot_settings'].length > 0) {
+        const sourceBotSettings = data['bot_settings'][0];
+        if (sourceBotSettings.id === sourceUserId) {
+          const existingBotSettingsRequest = botSettingsStore.get(targetUserId);
+          existingBotSettingsRequest.onsuccess = () => {
+            const existingBotSettings = existingBotSettingsRequest.result;
+            if (!existingBotSettings) {
+              const newBotSettings = { ...sourceBotSettings, id: targetUserId };
+              botSettingsStore.put(newBotSettings);
+            }
+          };
+        }
+      }
+      
+      const chatHistory = data['chat_history'] || [];
+      const messages = data['messages'] || [];
+      const todos = data['todos'] || [];
+      
+      chatHistory.forEach((chat: any) => {
+        if (chat.userId === sourceUserId) {
+          const newChatId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          idMap[chat.id] = newChatId;
+          
+          const newChat = {
+            ...chat,
+            id: newChatId,
+            userId: targetUserId
+          };
+          chatHistoryStore.put(newChat);
+        }
+      });
+      
+      messages.forEach((msg: any) => {
+        if (idMap[msg.chatId]) {
+          const newMsgId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          const newMessage = {
+            ...msg,
+            id: newMsgId,
+            chatId: idMap[msg.chatId]
+          };
+          messagesStore.put(newMessage);
+        }
+      });
+      
+      todos.forEach((todo: any) => {
+        if (todo.userId === sourceUserId) {
+          const newTodoId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          const newTodo = {
+            ...todo,
+            id: newTodoId,
+            userId: targetUserId
+          };
+          todosStore.put(newTodo);
+        }
+      });
+    };
     
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
