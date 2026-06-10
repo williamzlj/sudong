@@ -59,7 +59,7 @@ i18n
           goBack: '返回',
           chatWith: '与',
           chatWithBot: '与{{name}}对话',
-          loadedRecords: '历史记录',
+          loadedRecords: '历史',
           clickToBack: '点击返回查看更多记录',
           autoSaveSuccess: '自动保存成功',
           jumpToTop: '跳转到顶部',
